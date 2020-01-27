@@ -14,8 +14,16 @@ struct XMLFileInfo {
     bool isalone;
 } FileInfo;
 
-struct XMLTags {
-    XmlSyntax tagType;
+struct TTreeNode {
+    using xiTreeNodeList = std::vector<TTreeNode*>;
+    int Generation;
+    TTreeNode* Parent = nullptr;
+    xiTreeNodeList Children;
+    std::string Content;
+    struct Tag {
+        std::string TagName;
+        XmlSyntax tagType;
+    };
 };
 const std::string FileName{"/root/XML/test/datain.xml"};
 const char
@@ -76,17 +84,29 @@ void getXMLInfo(const std::string& line) {
                            "Failed to locate XML file info!");
     }
 }
+struct __XMLStackReader {
+    size_t tot, begin;
+};
+
+std::string __Trimstring(const std::string& text) {
+    std::cerr << "[Trimer] ";
+    std::cerr << text << std::endl;
+    return std::string();
+}
 void addTags() {
+    freopen("./output.out", "w", stderr);
     using namespace std;
     using namespace boost;
+    // Reader stack
+    std::stack<__XMLStackReader> st;
+
     if (!file.is_open())
         throw system_error(make_error_code(errc::io_error),
                            "Xml file is not open!");
     string buffer;
 
     regex regS(reg_label_start), regE(reg_label_end), regL(reg_label);
-    stack<int> st;
-    int tot = 0;
+    size_t tot = 0;
     while (1) {
         smatch res;
         try {
@@ -95,31 +115,46 @@ void addTags() {
             break;
         }
         auto l = buffer.cbegin(), r = buffer.cend();
+        size_t now = 0;
         while (regex_search(l, r, res, regL)) {
+            auto i = res.prefix().length();
             auto p = res.str().cbegin(), q = res.str().cend();
             smatch ress;
+            // start
             if (regex_search(p, q, ress, regS)) {
-                st.push(++tot);
+                st.push({++tot, now + ress.str().length()});
 #ifdef DEBUG
                 cout << "|";
-                for (int i = 1; i <= (tot << 1); ++i) cout << "-";
+                for (size_t i = 1; i <= (tot << 1); ++i) cout << "-";
                 cout << "Tag start: " << ress.str() << endl;
 #endif
             }
+            // end
             if (regex_search(p, q, ress, regE)) {
 #ifdef DEBUG
+
                 cout << "|";
-                for (int i = 1; i <= (tot << 1); ++i) cout << "-";
+                for (size_t i = 1; i <= (tot << 1); ++i) cout << "-";
                 cout << "Tag end: " << ress.str() << endl;
 #endif
-                if (!st.empty())
+                if (!st.empty()) {
+                    auto startPos = st.top().begin;
+                    auto ii = l, jj = p;
+                    string ww;
+                    // 这里没办法处理避免文本中的<和标签中的<相同带来的问题。
+                    // 需要比较两个迭代器是否相同。Fuck boost::regex
+                    // boost::regex傻逼的设计
+                    while (*ii != *jj) {
+                        ww += *(ii++);
+                    }
+                    __Trimstring(ww);
                     st.pop();
-                else
+                } else
                     throw system_error(make_error_code(errc::io_error),
                                        "Xml file is not invalid!");
             }
             l = res[0].second;
-            tot = st.empty() ? 0 : st.top();
+            tot = st.empty() ? 0 : st.top().tot;
         }
     }
     if (!st.empty()) {
@@ -138,9 +173,9 @@ void addTags() {
 #endif
         FileInfo = {"UTF-8", "1.0", 1};
     }
-#ifdef DEBUG
+    // #ifdef DEBUG
     assert(st.empty());
-#endif
+    // #endif
 }
 bool hasNext() { return file.is_open() && !file.eof(); }
 }  // namespace xmlFile
