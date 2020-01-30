@@ -16,15 +16,24 @@ struct XMLFileInfo {
 
 struct TTreeNode {
     using xiTreeNodeList = std::vector<TTreeNode*>;
-    int Generation;
+    int Generation = 1;
     TTreeNode* Parent = nullptr;
     xiTreeNodeList Children;
     std::string Content;
     struct Tag {
-        std::string TagName;
-        XmlSyntax tagType;
-    };
-};
+        std::string TagName = "Virtual root";
+        XmlSyntax tagType = XmlSyntax::XmlDocumentSyntax;
+    } tag;
+    bool addNode(const TTreeNode::Tag& rhs, const std::string& content = "") {
+        auto nxt = new TTreeNode();
+        nxt->Generation = this->Generation + 1;
+        nxt->tag = rhs;
+        nxt->Parent = this;
+        nxt->Content = content;
+        this->Children.push_back(nxt);
+    }
+} __Treeroot, *Treeroot = &__Treeroot;
+
 const std::string FileName{"/root/XML/test/datain.xml"};
 const char
     *reg_ver = R"...((?<=version\=\")[\w|\.]+(?=\"))...",
@@ -85,14 +94,24 @@ void getXMLInfo(const std::string& line) {
     }
 }
 struct __XMLStackReader {
-    size_t tot, begin;
+    size_t tot;
+    TTreeNode* pNode;
 };
-
+void printTree(TTreeNode* now, int depth) {
+    for (int i = 1; i <= depth; ++i) std::cout << "--";
+    std::cout << now->tag.TagName << "\n";
+    for (auto& x : now->Children) {
+        printTree(x, depth + 1);
+    }
+    for (int i = 1; i <= depth; ++i) std::cout << "--";
+    std::cout << "[End]" << now->tag.TagName << "\n";
+}
 std::string __Trimstring(const std::string& text) {
     std::cerr << "[Trimer] ";
     std::cerr << text << std::endl;
     return std::string();
 }
+
 void addTags() {
     freopen("./output.out", "w", stderr);
     using namespace std;
@@ -115,39 +134,50 @@ void addTags() {
             break;
         }
         auto l = buffer.cbegin(), r = buffer.cend();
-        size_t now = 0;
         while (regex_search(l, r, res, regL)) {
-            auto i = res.prefix().length();
-            auto p = res.str().cbegin(), q = res.str().cend();
+            // 必须先调用str(0)才能获得常量迭代器
+            // fuck boost
+            auto boost_your_mother_flies_in_the_sky = res.str(0);
+            auto p = boost_your_mother_flies_in_the_sky.cbegin(),
+                 q = boost_your_mother_flies_in_the_sky.cend();
             smatch ress;
-            // start
-            if (regex_search(p, q, ress, regS)) {
-                st.push({++tot, now + ress.str().length()});
-#ifdef DEBUG
-                cout << "|";
-                for (size_t i = 1; i <= (tot << 1); ++i) cout << "-";
-                cout << "Tag start: " << ress.str() << endl;
-#endif
-            }
-            // end
-            if (regex_search(p, q, ress, regE)) {
-#ifdef DEBUG
+            // 标签开始
+            auto pNode = st.empty() ? Treeroot : st.top().pNode;
 
-                cout << "|";
-                for (size_t i = 1; i <= (tot << 1); ++i) cout << "-";
-                cout << "Tag end: " << ress.str() << endl;
-#endif
+            if (regex_search(p, q, ress, regS)) {
+                TTreeNode::Tag tag;
+                //去掉首尾的尖括号
+                string tmp = ress.str().substr(1);
+                tmp.pop_back();
+                tag.TagName = tmp;
+                // 加入新节点
+                pNode->addNode(tag);
+                st.push({++tot, pNode->Children.back()});
+// #ifdef DEBUG
+//                 cout << "|";
+//                 for (size_t i = 1; i <= (tot << 1); ++i) cout << "-";
+//                 cout << "Tag start: " << ress.str() << endl;
+// #endif
+            }
+            // 标签结束
+            if (regex_search(p, q, ress, regE)) {
+// #ifdef DEBUG
+
+//                 cout << "|";
+//                 for (size_t i = 1; i <= (tot << 1); ++i) cout << "-";
+//                 cout << "Tag end: " << ress.str() << endl;
+// #endif
                 if (!st.empty()) {
-                    auto startPos = st.top().begin;
                     auto ii = l, jj = p;
                     string ww;
                     // 这里没办法处理避免文本中的<和标签中的<相同带来的问题。
                     // 需要比较两个迭代器是否相同。Fuck boost::regex
                     // boost::regex傻逼的设计
-                    while (*ii != *jj) {
-                        ww += *(ii++);
-                    }
-                    __Trimstring(ww);
+                    // while (*ii != *jj) {
+                    //     ww += *(ii++);
+                    // }
+                    // cout << ww << endl;
+                    // __Trimstring(ww);
                     st.pop();
                 } else
                     throw system_error(make_error_code(errc::io_error),
@@ -161,6 +191,10 @@ void addTags() {
         throw system_error(make_error_code(errc::io_error),
                            "Xml file is not invalid!");
     }
+#ifdef DEBUG
+    cout << "=====================Tree==============\n";
+    printTree(Treeroot, 1);
+#endif
     file.clear();
     file.seekg(ios_base::beg);
 
