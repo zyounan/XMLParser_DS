@@ -2,9 +2,6 @@
 #include "xml.h"
 #include "xmlfile.h"
 int main() {
-
-
-
     xmlFile::init();
 #ifdef DEBUG
     xmlFile::addTags();

@@ -10,8 +10,8 @@ const char* commentHeader = "<!--";
 const char* dtdHeader = "<!";
 const char* cdataHeader = "<![CDATA[";
 struct XMLFileInfo {
-    std::string encoding, version;
-    bool isalone;
+    std::string encoding = "UTF-8", version;
+    bool isalone = 1;
 } FileInfo;
 
 struct TTreeNode {
@@ -34,12 +34,12 @@ struct TTreeNode {
     }
 } __Treeroot, *Treeroot = &__Treeroot;
 
-const std::string FileName{"/root/XML/test/datain.xml"};
+const std::string FileName{"/root/XML/test/datain2.xml"};
 const char
-    *reg_ver = R"...((?<=version\=\")[\w|\.]+(?=\"))...",
-    *reg_encoding = R"...((?<=encoding\=\")[\w|\F.|\-]+(?=\"))...",
+    *reg_ver = R"...((?<=version\=[\"|\'])[\w|\.]+(?=[\"|\']))...",
+    *reg_encoding = R"...((?<=encoding\=[\"|\'])[\w|\F.|\-]+(?=[\"|\']))...",
     *reg_standalone =
-        R"...((?<=standalone\=\")[\w|\.|\-]+(?=\"))...",
+        R"...((?<=standalone\=[\"|\'])[\w|\.|\-]+(?=[\"|\']))...",
     *reg_label_start = R"...((?<!\")<[^\f\n\r\t\v\/\!]+?(>|\/>))...",
     *reg_label_end =
         R"...((?<!\")(<\/[^\f\n\r\t\v\/\!]+?>|<[^\f\n\r\t\v\/\!]+?\/>))...",
@@ -64,7 +64,7 @@ void printDebugInfo() {
     using std::endl;
     cout << "\nEncoding: " << FileInfo.encoding
          << "\nXML Version: " << FileInfo.version
-         << "\nDependency: " << FileInfo.isalone << endl;
+         << "\nStandalone: " << FileInfo.isalone << endl;
 #endif
 }
 void getXMLInfo(const std::string& line) {
@@ -100,6 +100,10 @@ struct __XMLStackReader {
 void printTree(TTreeNode* now, int depth) {
     for (int i = 1; i <= depth; ++i) std::cout << "--";
     std::cout << now->tag.TagName << "\n";
+    if (now->Content.size()) {
+        for (int i = 1; i <= depth; ++i) std::cout << "  ";
+        std::cout << "[Content]" << now->Content << "\n";
+    }
     for (auto& x : now->Children) {
         printTree(x, depth + 1);
     }
@@ -107,9 +111,18 @@ void printTree(TTreeNode* now, int depth) {
     std::cout << "[End]" << now->tag.TagName << "\n";
 }
 std::string __Trimstring(const std::string& text) {
-    std::cerr << "[Trimer] ";
-    std::cerr << text << std::endl;
-    return std::string();
+    using std::string;
+    string res = text;
+    //左侧空白
+    res.erase(res.begin(),
+              std::find_if(res.begin(), res.end(),
+                           [&](int ch) -> bool { return !std::isspace(ch); }));
+    //右侧空白
+    res.erase(std::find_if(res.rbegin(), res.rend(),
+                           [](int ch) -> bool { return !std::isspace(ch); })
+                  .base(),
+              res.end());
+    return res;
 }
 
 void addTags() {
@@ -118,11 +131,25 @@ void addTags() {
     using namespace boost;
     // Reader stack
     std::stack<__XMLStackReader> st;
-
     if (!file.is_open())
         throw system_error(make_error_code(errc::io_error),
                            "Xml file is not open!");
     string buffer;
+
+    file.clear();
+    file.seekg(ios_base::beg);
+
+    getline(file, buffer);
+    try {
+        getXMLInfo(buffer);
+    } catch (...) {
+#ifdef DEBUG
+        cout << "<!!!>This XML doesn't contain headers" << endl;
+#endif
+        // FileInfo = {"UTF-8", "1.0", 1};
+        file.clear();
+        file.seekg(ios_base::beg);
+    }
 
     regex regS(reg_label_start), regE(reg_label_end), regL(reg_label);
     size_t tot = 0;
@@ -152,30 +179,42 @@ void addTags() {
                 tag.TagName = tmp;
                 // 加入新节点
                 pNode->addNode(tag);
+
+                auto ii = l, jj = p;
+                string ww;
+                while (*ii != *jj) {  //处理新标签之前的文本
+                    ww += *(ii++);
+                }
+
+                pNode->Content += __Trimstring(ww);
+
                 st.push({++tot, pNode->Children.back()});
-// #ifdef DEBUG
-//                 cout << "|";
-//                 for (size_t i = 1; i <= (tot << 1); ++i) cout << "-";
-//                 cout << "Tag start: " << ress.str() << endl;
-// #endif
+
+                // #ifdef DEBUG
+                //                 cout << "|";
+                //                 for (size_t i = 1; i <= (tot << 1); ++i) cout
+                //                 << "-"; cout << "Tag start: " << ress.str()
+                //                 << endl;
+                // #endif
             }
             // 标签结束
             if (regex_search(p, q, ress, regE)) {
-// #ifdef DEBUG
+                // #ifdef DEBUG
 
-//                 cout << "|";
-//                 for (size_t i = 1; i <= (tot << 1); ++i) cout << "-";
-//                 cout << "Tag end: " << ress.str() << endl;
-// #endif
+                //                 cout << "|";
+                //                 for (size_t i = 1; i <= (tot << 1); ++i) cout
+                //                 << "-"; cout << "Tag end: " << ress.str() <<
+                //                 endl;
+                // #endif
                 if (!st.empty()) {
                     auto ii = l, jj = p;
                     string ww;
-                    // 这里没办法处理避免文本中的<和标签中的<相同带来的问题。
-                    // 需要比较两个迭代器是否相同。Fuck boost::regex
-                    // boost::regex傻逼的设计
-                    // while (*ii != *jj) {
-                    //     ww += *(ii++);
-                    // }
+                    // 处理两个相邻标签之间的文本
+                    while (*ii != *jj) {
+                        ww += *(ii++);
+                    }
+
+                    st.top().pNode->Content += __Trimstring(ww);
                     // cout << ww << endl;
                     // __Trimstring(ww);
                     st.pop();
@@ -185,28 +224,24 @@ void addTags() {
             }
             l = res[0].second;
             tot = st.empty() ? 0 : st.top().tot;
+        }  // while(regex)
+        auto pNode = st.empty() ? Treeroot : st.top().pNode;
+        string ww;
+        while (l != r) {  //处理标签之后的文本
+            ww += *(l++);
         }
-    }
+        pNode->Content += __Trimstring(ww);
+    }  // while(1)
     if (!st.empty()) {
         throw system_error(make_error_code(errc::io_error),
                            "Xml file is not invalid!");
     }
+
 #ifdef DEBUG
     cout << "=====================Tree==============\n";
     printTree(Treeroot, 1);
 #endif
-    file.clear();
-    file.seekg(ios_base::beg);
 
-    getline(file, buffer);
-    try {
-        getXMLInfo(buffer);
-    } catch (...) {
-#ifdef DEBUG
-        cout << "<!!!>This XML doesn't contain headers" << endl;
-#endif
-        FileInfo = {"UTF-8", "1.0", 1};
-    }
     // #ifdef DEBUG
     assert(st.empty());
     // #endif
