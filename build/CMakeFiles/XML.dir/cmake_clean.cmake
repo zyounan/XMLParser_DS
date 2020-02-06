@@ -1,5 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/XML.dir/src/main.cpp.o"
+  "CMakeFiles/XML.dir/src/test.cpp.o"
+  "CMakeFiles/XML.dir/src/xmlfile.cpp.o"
   "../bin/XML.pdb"
   "../bin/XML"
 )

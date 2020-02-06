@@ -14,3 +14,4 @@ enum class XmlSyntax {
     SyntaxList,
     XmlElementEndTagSyntax
 };
+

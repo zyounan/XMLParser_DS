@@ -1,0 +1,188 @@
+<!!!>This XML doesn't contain headers
+=====================Tree==============
+--[Start] 
+----[Start] breakfast_menu
+------[Start] food
+--------[Start] name
+----------[Start] name2
+------------[Start] name3
+--------------[Start] name4
+----------------[Start] description
+                [Content] two of our famous Belgian
+------------------[Start] fuck
+                  [Content] Waffles plenty of real maple syrup
+------------------[End] fuck
+------------------[Start] shit
+------------------[End] shit
+----------------[End] description
+----------------[Start] name5
+------------------[Start] name6
+--------------------[Start] name7
+----------------------[Start] name8
+------------------------[Start] name9
+                        [Content] Belgian Waffles
+------------------------[End] name9
+----------------------[End] name8
+--------------------[End] name7
+--------------------[Start] name8
+----------------------[Start] name9
+                      [Content] Belgian Waffles
+----------------------[End] name9
+--------------------[End] name8
+------------------[End] name6
+----------------[End] name5
+----------------[Start] name8
+------------------[Start] name9
+                  [Content] Belgian Waffles
+------------------[End] name9
+----------------[End] name8
+--------------[End] name4
+------------[End] name3
+----------[End] name2
+--------[End] name
+--------[Start] price
+        [Content] $5.95
+--------[End] price
+--------[Start] description
+        [Content] two of our famous Belgian Waffles with plenty of real maple syrup
+--------[End] description
+--------[Start] calories
+        [Content] 650
+--------[End] calories
+------[End] food
+------[Start] food
+--------[Start] name
+        [Content] Strawberry Belgian Waffles
+--------[End] name
+--------[Start] price
+        [Content] $7.95
+--------[End] price
+--------[Start] description
+        [Content] light Belgian waffles covered with strawberries and whipped cream
+--------[End] description
+--------[Start] calories
+        [Content] 900
+--------[End] calories
+------[End] food
+------[Start] food
+--------[Start] name
+        [Content] Berry-Berry Belgian Waffles
+--------[End] name
+--------[Start] price
+        [Content] $8.95
+--------[End] price
+--------[Start] description
+        [Content] light Belgian waffles covered with an assortment of fresh berries and whipped cream
+--------[End] description
+--------[Start] calories
+        [Content] 900
+--------[End] calories
+------[End] food
+------[Start] food
+--------[Start] name
+        [Content] French Toast
+--------[End] name
+--------[Start] price
+        [Content] $4.50
+--------[End] price
+--------[Start] description
+        [Content] thick slices made from our homemade sourdough bread
+--------[End] description
+--------[Start] calories
+        [Content] 600
+--------[End] calories
+------[End] food
+------[Start] food
+--------[Start] name
+        [Content] Homestyle Breakfast
+--------[End] name
+--------[Start] price
+        [Content] $6.95
+--------[End] price
+--------[Start] description
+        [Content] two eggs, bacon or sausage, toast, and our ever-popular hash browns
+--------[End] description
+--------[Start] calories
+        [Content] 950
+--------[End] calories
+------[End] food
+----[End] breakfast_menu
+--[End] 
+
+
+
+Encoding: UTF-8
+XML Version: 
+Standalone: 1
+=====================Tree==============
+--[Start] 
+----[Start] ToDo
+------[Start] Item
+      distance : close
+      priority : 1
+      [Content] Go to the
+--------[Start] bold
+        [Content] store!
+--------[End] bold
+------[End] Item
+------[Start] Item
+      distance : none
+      priority : 2
+      [Content] Do bills
+------[End] Item
+------[Start] Item
+      distance : far back
+      priority : 2
+      [Content] Look for Evil Dinosaurs!
+------[End] Item
+----[End] ToDo
+--[End] 
+
+
+
+Encoding: UTF-8
+XML Version: 1.0
+Standalone: 0
+=====================Tree==============
+--[Start] 
+----[Start] ToDo
+------[Start] Item
+      distance : close
+      priority : 2
+      [Content] Go to the
+--------[Start] bold
+        [Content] Toy store!
+--------[End] bold
+------[End] Item
+------[Start] Item
+      distance : far
+      priority : 1
+      [Content] Talk to:
+--------[Start] Meeting
+        where : School
+----------[Start] Attendee
+          name : Marple
+          position : teacher
+----------[End] Attendee
+----------[Start] Attendee
+          name : Voel
+          position : counselor
+----------[End] Attendee
+--------[End] Meeting
+--------[Start] Meeting
+        where : Lunch
+--------[End] Meeting
+------[End] Item
+------[Start] Item
+      distance : here
+      priority : 2
+      [Content] Do bills
+------[End] Item
+----[End] ToDo
+--[End] 
+
+
+
+Encoding: UTF-8
+XML Version: 1.0
+Standalone: 0

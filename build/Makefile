@@ -153,6 +153,60 @@ src/main.cpp.s:
 	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
+src/test.o: src/test.cpp.o
+
+.PHONY : src/test.o
+
+# target to build an object file
+src/test.cpp.o:
+	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/src/test.cpp.o
+.PHONY : src/test.cpp.o
+
+src/test.i: src/test.cpp.i
+
+.PHONY : src/test.i
+
+# target to preprocess a source file
+src/test.cpp.i:
+	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/src/test.cpp.i
+.PHONY : src/test.cpp.i
+
+src/test.s: src/test.cpp.s
+
+.PHONY : src/test.s
+
+# target to generate assembly for a file
+src/test.cpp.s:
+	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/src/test.cpp.s
+.PHONY : src/test.cpp.s
+
+src/xmlfile.o: src/xmlfile.cpp.o
+
+.PHONY : src/xmlfile.o
+
+# target to build an object file
+src/xmlfile.cpp.o:
+	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/src/xmlfile.cpp.o
+.PHONY : src/xmlfile.cpp.o
+
+src/xmlfile.i: src/xmlfile.cpp.i
+
+.PHONY : src/xmlfile.i
+
+# target to preprocess a source file
+src/xmlfile.cpp.i:
+	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/src/xmlfile.cpp.i
+.PHONY : src/xmlfile.cpp.i
+
+src/xmlfile.s: src/xmlfile.cpp.s
+
+.PHONY : src/xmlfile.s
+
+# target to generate assembly for a file
+src/xmlfile.cpp.s:
+	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/src/xmlfile.cpp.s
+.PHONY : src/xmlfile.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -165,6 +219,12 @@ help:
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
+	@echo "... src/test.o"
+	@echo "... src/test.i"
+	@echo "... src/test.s"
+	@echo "... src/xmlfile.o"
+	@echo "... src/xmlfile.i"
+	@echo "... src/xmlfile.s"
 .PHONY : help
 
 

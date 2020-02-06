@@ -1,11 +1,6 @@
 #include "stdc++.h"
-#include "xml.h"
-#include "xmlfile.h"
+#include "Unittest.h"
 int main() {
-    xmlFile::init();
-#ifdef DEBUG
-    xmlFile::addTags();
-    xmlFile::printDebugInfo();
-#endif
+    RunUnitTest();
     return 0;
 }

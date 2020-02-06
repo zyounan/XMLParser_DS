@@ -44,11 +44,11 @@ LINK_DIRECTORIES("/usr/local/lib/")
 
 AUX_SOURCE_DIRECTORY(src DIR_SRCS) # 添加源代码文件夹, 自动扫描所有文件
 
-add_executable(XML  # 输出名为chess的可执行文件
+add_executable(XML  # 输出名为XML的可执行文件
    ${DIR_SRCS}
 )
 # 也可以这么写
-# add_executable(chess  # 输出名为chess的可执行文件
+# add_executable(XML  # 输出名为chess的可执行文件
+#    ./src/test.cpp
 #    ./src/main.cpp
-#    ./src/utils.cpp
 # )

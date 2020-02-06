@@ -3,5 +3,15 @@
   "directory": "/root/XML/build",
   "command": "/usr/bin/g++-8   -DBOOST_ALL_NO_LIB -DBOOST_REGEX_DYN_LINK -DDEBUG -I/root/XML/include -isystem /usr/local/include   -std=c++1z  -O0 -Wall -g2 -ggdb -lboost_regex -L/usr/local/lib/   -o CMakeFiles/XML.dir/src/main.cpp.o -c /root/XML/src/main.cpp",
   "file": "/root/XML/src/main.cpp"
+},
+{
+  "directory": "/root/XML/build",
+  "command": "/usr/bin/g++-8   -DBOOST_ALL_NO_LIB -DBOOST_REGEX_DYN_LINK -DDEBUG -I/root/XML/include -isystem /usr/local/include   -std=c++1z  -O0 -Wall -g2 -ggdb -lboost_regex -L/usr/local/lib/   -o CMakeFiles/XML.dir/src/test.cpp.o -c /root/XML/src/test.cpp",
+  "file": "/root/XML/src/test.cpp"
+},
+{
+  "directory": "/root/XML/build",
+  "command": "/usr/bin/g++-8   -DBOOST_ALL_NO_LIB -DBOOST_REGEX_DYN_LINK -DDEBUG -I/root/XML/include -isystem /usr/local/include   -std=c++1z  -O0 -Wall -g2 -ggdb -lboost_regex -L/usr/local/lib/   -o CMakeFiles/XML.dir/src/xmlfile.cpp.o -c /root/XML/src/xmlfile.cpp",
+  "file": "/root/XML/src/xmlfile.cpp"
 }
 ]

@@ -6,6 +6,10 @@
 
 #IncludeRegexTransform: 
 
+../include/Unittest.h
+stdc++.h
+../include/stdc++.h
+
 ../include/stdc++.h
 cassert
 -
@@ -161,8 +165,6 @@ unordered_set
 ../include/xml.h
 
 ../include/xmlfile.h
-boost/regex.hpp
--
 stdc++.h
 ../include/stdc++.h
 xml.h
@@ -171,10 +173,26 @@ xml.h
 /root/XML/src/main.cpp
 stdc++.h
 /root/XML/src/stdc++.h
+Unittest.h
+/root/XML/src/Unittest.h
+
+/root/XML/src/test.cpp
+stdc++.h
+/root/XML/src/stdc++.h
 xml.h
 /root/XML/src/xml.h
 xmlfile.h
 /root/XML/src/xmlfile.h
+
+/root/XML/src/xmlfile.cpp
+xmlfile.h
+/root/XML/src/xmlfile.h
+boost/regex.hpp
+-
+stdc++.h
+/root/XML/src/stdc++.h
+xml.h
+/root/XML/src/xml.h
 
 /usr/local/include/boost/assert.hpp
 boost/config.hpp
