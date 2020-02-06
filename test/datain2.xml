@@ -4,7 +4,6 @@
       store!</bold>
     </Item>
     <Item priority="2" distance='none'> Do bills   </Item>
-    <Item priority="2" distance='far back'> Look for Evil
-      Dinosaurs! </Item>
+    <Item priority="2" distance='far back'> Look for Evil Dinosaurs! </Item>
 
 </ToDo>

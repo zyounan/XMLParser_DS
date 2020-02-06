@@ -22,16 +22,27 @@ struct TTreeNode {
     std::string Content;
     struct Tag {
         std::string TagName = "Virtual root";
+        std::map<std::string, std::string> key_value;
         XmlSyntax tagType = XmlSyntax::XmlDocumentSyntax;
     } tag;
-    bool addNode(const TTreeNode::Tag& rhs, const std::string& content = "") {
+    auto __makeTreeNode(const TTreeNode::Tag& rhs) {
         auto nxt = new TTreeNode();
         nxt->Generation = this->Generation + 1;
         nxt->tag = rhs;
         nxt->Parent = this;
-        nxt->Content = content;
-        this->Children.push_back(nxt);
+        return nxt;
     }
+    bool addNode(
+        const TTreeNode::Tag& rhs /*, const std::string& content = ""*/) {
+        auto nxt = __makeTreeNode(rhs);
+        this->Children.emplace_back(nxt);
+        return nxt;
+    }
+    // bool addNode(const TTreeNode::Tag& rhs/*, std::string&& content*/) {
+    //     auto nxt = __makeTreeNode(rhs);
+    //     this->Children.emplace_back(nxt);
+    //     return nxt;
+    // }
 } __Treeroot, *Treeroot = &__Treeroot;
 
 const std::string FileName{"/root/XML/test/datain2.xml"};
@@ -43,10 +54,19 @@ const char
     *reg_label_start = R"...((?<!\")<[^\f\n\r\t\v\/\!]+?(>|\/>))...",
     *reg_label_end =
         R"...((?<!\")(<\/[^\f\n\r\t\v\/\!]+?>|<[^\f\n\r\t\v\/\!]+?\/>))...",
-    *reg_label = R"...((?<!\")<[^\f\n\r\t\v\!]+?(>|\/>))...";
+    *reg_label = R"...((?<!\")<[^\f\n\r\t\v\!]+?(>|\/>))...",
+    //参数中不带引号的匹配
+        *reg_label_args_without_quotes =
+            R"...((?<=\ )((?<!("|'))[^=\ ])+=[^"'>\/\ ]+)...",
+    //参数中带引号的匹配
+            *reg_label_args_with_quotes =
+                R"...((?<=\ )((?<!("|'))[^=\ ])+=("|').*?("|'))...",
+    //不能有空格
+                *reg_label_args = R"...((\S+)=[^(>\/\ )]+)...";
 bool hasNext();
 void getXMLInfo(const std::string&);
 void init() {
+    freopen("./output.out", "w", stderr);
     using namespace std;
     file.exceptions(ifstream::failbit);
     try {
@@ -70,13 +90,8 @@ void printDebugInfo() {
 void getXMLInfo(const std::string& line) {
     using namespace std;
     using namespace boost;
-    // if (!file.is_open())
-    //     throw system_error(make_error_code(errc::io_error),
-    //                        "Xml file is not open!");
     regex test(reg_ver), test2(reg_standalone), test3(reg_encoding);
     smatch fuck, fuck2, fuck3;
-    // string line;
-    // getline(file, line);
     if (regex_search(line, fuck, test)) {
         FileInfo.version = fuck[0];
     }
@@ -99,16 +114,20 @@ struct __XMLStackReader {
 };
 void printTree(TTreeNode* now, int depth) {
     for (int i = 1; i <= depth; ++i) std::cout << "--";
-    std::cout << now->tag.TagName << "\n";
+    std::cout << "[Start] " << now->tag.TagName << "\n";
+    for (auto& x : now->tag.key_value) {
+        for (int i = 1; i <= depth; ++i) std::cout << "  ";
+        std::cout << x.first << " : " << x.second << std::endl;
+    }
     if (now->Content.size()) {
         for (int i = 1; i <= depth; ++i) std::cout << "  ";
-        std::cout << "[Content]" << now->Content << "\n";
+        std::cout << "[Content] " << now->Content << "\n";
     }
     for (auto& x : now->Children) {
         printTree(x, depth + 1);
     }
     for (int i = 1; i <= depth; ++i) std::cout << "--";
-    std::cout << "[End]" << now->tag.TagName << "\n";
+    std::cout << "[End] " << now->tag.TagName << "\n";
 }
 std::string __Trimstring(const std::string& text) {
     using std::string;
@@ -124,12 +143,48 @@ std::string __Trimstring(const std::string& text) {
               res.end());
     return res;
 }
-
+auto getKeyValue(const std::string& content) {
+    using namespace std;
+    auto ll = content.find("\""), l = content.find("'");
+    ll = min(ll, l);
+    ll = content.substr(0, ll).find("=");
+    string lhs = content.substr(0, ll), rhs = content.substr(ll + 1);
+    if (rhs.front() == '\'' || rhs.front() == '"') rhs.erase(0, 1);
+    if (rhs.back() == '\'' || rhs.back() == '"') rhs.pop_back();
+    return make_pair(move(lhs), move(rhs));
+}
+auto trimTagEnd(const std::string& Tagname) {
+    using namespace std;
+    string res = Tagname;
+    if (Tagname.back() == '>') res.pop_back();
+    if (Tagname.front() == '<') res.erase(0, 1);
+    if (res.back() == '/')
+        res.pop_back();
+    else if (res.front() == '/')
+        res.erase(0, 1);
+    return res;
+}
+void parseTagArgv(const std::string& Tag, TTreeNode* const node) {
+    auto l = Tag.cbegin(), r = Tag.cend();
+    using namespace boost;
+    regex reg2(reg_label_args_with_quotes), reg(reg_label_args_without_quotes);
+    smatch res;
+    while (regex_search(l, r, res, reg)) {
+        //没有引号的匹配
+        node->tag.key_value.insert(move(getKeyValue(res.str())));
+        // std::cout << "[Args] " << res << std::endl;
+        l = res[0].second;
+    }
+    l = Tag.cbegin(), r = Tag.cend();
+    while (regex_search(l, r, res, reg2)) {
+        node->tag.key_value.insert(move(getKeyValue(res.str())));
+        // std::cout << "[Args] " << res << std::endl;
+        l = res[0].second;
+    }
+}
 void addTags() {
-    freopen("./output.out", "w", stderr);
     using namespace std;
     using namespace boost;
-    // Reader stack
     std::stack<__XMLStackReader> st;
     if (!file.is_open())
         throw system_error(make_error_code(errc::io_error),
@@ -146,7 +201,6 @@ void addTags() {
 #ifdef DEBUG
         cout << "<!!!>This XML doesn't contain headers" << endl;
 #endif
-        // FileInfo = {"UTF-8", "1.0", 1};
         file.clear();
         file.seekg(ios_base::beg);
     }
@@ -161,6 +215,8 @@ void addTags() {
             break;
         }
         auto l = buffer.cbegin(), r = buffer.cend();
+        string ww;  // 用于存放标签之间的文本
+        ww.reserve(512);
         while (regex_search(l, r, res, regL)) {
             // 必须先调用str(0)才能获得常量迭代器
             // fuck boost
@@ -174,49 +230,35 @@ void addTags() {
             if (regex_search(p, q, ress, regS)) {
                 TTreeNode::Tag tag;
                 //去掉首尾的尖括号
-                string tmp = ress.str().substr(1);
+                string&& tmp = ress.str().substr(1);
                 tmp.pop_back();
-                tag.TagName = tmp;
+                tag.TagName = std::move(tmp);
                 // 加入新节点
                 pNode->addNode(tag);
 
                 auto ii = l, jj = p;
-                string ww;
+                ww.clear();
                 while (*ii != *jj) {  //处理新标签之前的文本
                     ww += *(ii++);
                 }
 
-                pNode->Content += __Trimstring(ww);
+                pNode->Content += std::move(__Trimstring(ww));
+                parseTagArgv(tag.TagName, pNode->Children.back());
 
                 st.push({++tot, pNode->Children.back()});
-
-                // #ifdef DEBUG
-                //                 cout << "|";
-                //                 for (size_t i = 1; i <= (tot << 1); ++i) cout
-                //                 << "-"; cout << "Tag start: " << ress.str()
-                //                 << endl;
-                // #endif
             }
             // 标签结束
             if (regex_search(p, q, ress, regE)) {
-                // #ifdef DEBUG
-
-                //                 cout << "|";
-                //                 for (size_t i = 1; i <= (tot << 1); ++i) cout
-                //                 << "-"; cout << "Tag end: " << ress.str() <<
-                //                 endl;
-                // #endif
                 if (!st.empty()) {
                     auto ii = l, jj = p;
-                    string ww;
+                    ww.clear();
                     // 处理两个相邻标签之间的文本
                     while (*ii != *jj) {
                         ww += *(ii++);
                     }
+                    st.top().pNode->tag.TagName = trimTagEnd(ress.str());
 
-                    st.top().pNode->Content += __Trimstring(ww);
-                    // cout << ww << endl;
-                    // __Trimstring(ww);
+                    st.top().pNode->Content += std::move(__Trimstring(ww));
                     st.pop();
                 } else
                     throw system_error(make_error_code(errc::io_error),
@@ -226,11 +268,11 @@ void addTags() {
             tot = st.empty() ? 0 : st.top().tot;
         }  // while(regex)
         auto pNode = st.empty() ? Treeroot : st.top().pNode;
-        string ww;
+        ww.clear();
         while (l != r) {  //处理标签之后的文本
             ww += *(l++);
         }
-        pNode->Content += __Trimstring(ww);
+        pNode->Content += std::move(__Trimstring(ww));
     }  // while(1)
     if (!st.empty()) {
         throw system_error(make_error_code(errc::io_error),
@@ -241,10 +283,6 @@ void addTags() {
     cout << "=====================Tree==============\n";
     printTree(Treeroot, 1);
 #endif
-
-    // #ifdef DEBUG
-    assert(st.empty());
-    // #endif
 }
 bool hasNext() { return file.is_open() && !file.eof(); }
 }  // namespace xmlFile
