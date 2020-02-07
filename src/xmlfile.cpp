@@ -3,6 +3,10 @@
 #include "stdc++.h"
 #include "xml.h"
 
+
+
+
+
 namespace xmlFile {
 std::ifstream file;
 const char* xmlHeader = "<?xml";
