@@ -1,5 +1,4 @@
 <!!!>This XML doesn't contain headers
-=====================Tree==============
 --[Start] 
 ----[Start] breakfast_menu
 ------[Start] food
@@ -108,13 +107,11 @@
 ------[End] food
 ----[End] breakfast_menu
 --[End] 
-
-
-
-Encoding: UTF-8
-XML Version: 
-Standalone: 1
 =====================Tree==============
+
+
+Encoding : UTF-8
+Version : 
 --[Start] 
 ----[Start] ToDo
 ------[Start] Item
@@ -137,13 +134,11 @@ Standalone: 1
 ------[End] Item
 ----[End] ToDo
 --[End] 
-
-
-
-Encoding: UTF-8
-XML Version: 1.0
-Standalone: 0
 =====================Tree==============
+
+
+Encoding : UTF-8
+Version : 1.0
 --[Start] 
 ----[Start] ToDo
 ------[Start] Item
@@ -180,9 +175,8 @@ Standalone: 0
 ------[End] Item
 ----[End] ToDo
 --[End] 
+=====================Tree==============
 
 
-
-Encoding: UTF-8
-XML Version: 1.0
-Standalone: 0
+Encoding : UTF-8
+Version : 114.514

@@ -5,6 +5,7 @@
 
 class XmlTreeNode {
     using xiTreeNodeList = std::vector<XmlTreeNode*>;
+    friend class XmlDocument;
 
    public:
     struct Tag {
@@ -12,6 +13,8 @@ class XmlTreeNode {
         std::map<std::string, std::string> key_value;
         XmlSyntax tagType = XmlSyntax::XmlDocumentSyntax;
     } tag;
+    XmlTreeNode() = default;
+    XmlTreeNode(const XmlTreeNode& rhs) = delete;
 
    private:
     int Generation = 1;
@@ -40,8 +43,7 @@ class XmlTreeNode {
         this->Children.emplace_back(nxt);
         return nxt;
     }
-    XmlTreeNode();
-    XmlTreeNode(const XmlTreeNode& rhs) = delete;
+
     XmlTreeNode(XmlTreeNode&& rhs) {
         using std::move;
         tag = move(rhs.tag);
@@ -80,6 +82,7 @@ class XmlDocument {
     bool saveFile() const;
     void parse();
 
+    void printTree();
     struct XmlFileInfo {
         std::string encoding = "UTF-8", version;
         bool isalone = 1;
@@ -90,17 +93,17 @@ class XmlDocument {
     std::string Filename;
     std::ifstream file_in;
     std::ofstream file_out;
-
+    XmlFileInfo FileInfo;
     struct __XMLStackReader {
         size_t tot;
         XmlTreeNode* pNode;
     };
     XmlTreeNode __Treeroot, *Treeroot = &__Treeroot;
-
-    void __getXMLFileInfo();
+    void __init();
+    void __getXMLFileInfo(const std::string&);
     void __clearIOstate();
     void __printTree(XmlTreeNode*, int);
-    void __destroyAll();
+    void __destroyAll(XmlTreeNode*);
     //去除两侧空白
     std::string __trimString(const std::string&);
     std::pair<std::string, std::string> __getLabelKeyValue(const std::string&);
@@ -127,58 +130,9 @@ class XmlDocument {
                *reg_label_args_with_quotes =
                    R"...((?<=\ )((?<!("|'))[^=\ ])+=("|').*?("|'))...",
        //不能有空格
-                   *reg_label_args = R"...((\S+)=[^(>\/\ )]+)...";
+                   *reg_label_args = R"...((\S+)=[^(>\/\ )]+)...",
+       *xmlHeader = "<?xml", *commentHeader = "<!--", *dtdHeader = "<!",
+       *cdataHeader = "<![CDATA[";
 };
 
-namespace xmlFile {
-// const char* xmlHeader = "<?xml";
-// const char* commentHeader = "<!--";
-// const char* dtdHeader = "<!";
-// const char* cdataHeader = "<![CDATA[";
-struct XMLFileInfo {
-    std::string encoding = "UTF-8", version;
-    bool isalone = 1;
-};
-struct TTreeNode {
-    using xiTreeNodeList = std::vector<TTreeNode*>;
-    int Generation = 1;
-    TTreeNode* Parent = nullptr;
-    xiTreeNodeList Children;
-    std::string Content;
-    struct Tag {
-        std::string TagName = "Virtual root";
-        std::map<std::string, std::string> key_value;
-        XmlSyntax tagType = XmlSyntax::XmlDocumentSyntax;
-    } tag;
-    auto __makeTreeNode(const TTreeNode::Tag& rhs) {
-        auto nxt = new TTreeNode();
-        nxt->Generation = this->Generation + 1;
-        nxt->tag = rhs;
-        nxt->Parent = this;
-        return nxt;
-    }
-    bool addNode(const TTreeNode::Tag& rhs) {
-        auto nxt = __makeTreeNode(rhs);
-        this->Children.emplace_back(nxt);
-        return nxt;
-    }
-};
-struct __XMLStackReader {
-    size_t tot;
-    TTreeNode* pNode;
-};
-bool hasNext();
-void setiostreamMode();
-void getXMLInfo(const std::string&);
-void init(const std::string&);
-TTreeNode* __getTreeRoot();
-void printDebugInfo();
-void getXMLInfo(const std::string&);
-void printTree(TTreeNode*, int);
-void __destroyAll(TTreeNode*);
-std::string __Trimstring(const std::string&);
-auto getKeyValue(const std::string&);
-auto trimTagEnd(const std::string&);
-void parseTagArgv(const std::string&, TTreeNode* const);
-void addTags();
-}  // namespace xmlFile
+namespace xmlFile {}  // namespace xmlFile
