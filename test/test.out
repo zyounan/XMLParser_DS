@@ -7,32 +7,22 @@
 ------------[Start] name3
 --------------[Start] name4
 ----------------[Start] description
-                [Content] two of our famous Belgian
-------------------[Start] fuck
-                  [Content] Waffles plenty of real maple syrup
-------------------[End] fuck
-------------------[Start] shit
-------------------[End] shit
+                [Content] two of
 ----------------[End] description
 ----------------[Start] name5
 ------------------[Start] name6
 --------------------[Start] name7
 ----------------------[Start] name8
 ------------------------[Start] name9
-                        [Content] Belgian Waffles
+                        [Content] Be Waffles
 ------------------------[End] name9
 ----------------------[End] name8
 --------------------[End] name7
---------------------[Start] name8
-----------------------[Start] name9
-                      [Content] Belgian Waffles
-----------------------[End] name9
---------------------[End] name8
 ------------------[End] name6
 ----------------[End] name5
 ----------------[Start] name8
 ------------------[Start] name9
-                  [Content] Belgian Waffles
+                  [Content] Belgian Wafgdfgefhfles
 ------------------[End] name9
 ----------------[End] name8
 --------------[End] name4

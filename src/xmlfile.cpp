@@ -14,10 +14,10 @@ XmlDocument::XmlDocument(const std::string& filename) : Filename(filename) {
 XmlDocument::XmlDocument(XmlDocument&& rhs) {}
 XmlDocument::~XmlDocument() {
     __destroyAll(Treeroot);
-    try{
+    try {
         file_in.close();
         file_out.close();
-    }catch(...){
+    } catch (...) {
         ;
     }
 }
@@ -45,6 +45,31 @@ bool XmlDocument::loadFile(const std::string& filename) {
 bool XmlDocument::saveFile(const std::string& filename) const { return true; }
 bool XmlDocument::loadFile() { return loadFile(Filename); }
 bool XmlDocument::saveFile() const { return saveFile(Filename); }
+int XmlDocument::__ignore(std::string& buffer, std::string::const_iterator& l,
+                          std::string::const_iterator& r, const char* header,
+                          const char* End, bool& status) {
+    using std::string;
+    auto len = strlen(header), lene = strlen(End);
+    if (!status) {
+        auto s = buffer.find(header), t = buffer.find(End);
+        //两者在同一行
+        if (s != string::npos && t != string::npos) {
+            buffer = buffer.substr(0, s) + buffer.substr(t + lene);
+        } else if (s != string::npos) {
+            buffer = buffer.substr(0, s);
+            status = 1;
+        }
+    } else {
+        auto s = buffer.find(End);
+        if (s != string::npos) {
+            buffer = buffer.substr(s + lene);
+            status = 0;
+        } else
+            return 1;  // continue
+    }
+    l = buffer.cbegin(),r = buffer.cend();
+    return 0;
+}
 void XmlDocument::parse() {
     using namespace std;
     using namespace boost;
@@ -69,6 +94,7 @@ void XmlDocument::parse() {
 
     regex regS(reg_label_start), regE(reg_label_end), regL(reg_label);
     size_t tot = 0;
+    bool isinCDATA = 0, isinComment = 0;  //应该忽略CDATA之间的文本<![CDATA[*]]>
     while (1) {
         smatch res;
         try {
@@ -77,6 +103,12 @@ void XmlDocument::parse() {
             break;
         }
         auto l = buffer.cbegin(), r = buffer.cend();
+        //忽略CDATA 和comment部分
+        int check = __ignore(buffer, l, r, cdataHeader, cdataEnd, isinCDATA);
+        if (check) continue;
+        check = __ignore(buffer, l, r, commentHeader, commentEnd, isinComment);
+        if (check) continue;
+
         string ww;  // 用于存放标签之间的文本
         ww.reserve(512);
         while (regex_search(l, r, res, regL)) {

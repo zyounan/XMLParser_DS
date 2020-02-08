@@ -110,6 +110,8 @@ class XmlDocument {
     // trimTagEnd
     std::string __getTagName(const std::string&);
     void __parseTagAttr(const std::string&, XmlTreeNode* const);
+    int __ignore(std::string&, std::string::const_iterator&,
+                 std::string::const_iterator&, const char*, const char*, bool&);
 
    public:
     XmlTreeNode* getTreeRoot() const { return Treeroot; }
@@ -131,8 +133,8 @@ class XmlDocument {
                    R"...((?<=\ )((?<!("|'))[^=\ ])+=("|').*?("|'))...",
        //不能有空格
                    *reg_label_args = R"...((\S+)=[^(>\/\ )]+)...",
-       *xmlHeader = "<?xml", *commentHeader = "<!--", *dtdHeader = "<!",
-       *cdataHeader = "<![CDATA[";
+       *xmlHeader = "<?xml", *commentHeader = "<!--", *commentEnd = "-->",
+       *dtdHeader = "<!", *cdataHeader = "<![CDATA[", *cdataEnd = "]]>";
 };
 
 namespace xmlFile {}  // namespace xmlFile
