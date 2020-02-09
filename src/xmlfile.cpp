@@ -42,14 +42,66 @@ bool XmlDocument::loadFile(const std::string& filename) {
     }
     return true;
 }
-bool XmlDocument::saveFile(const std::string& filename) const { return true; }
+void XmlDocument::__printTabs(short tot) {
+    for (short i = 1; i <= tot; ++i) file_out << "\t";
+}
+void XmlDocument::__printTree(XmlTreeNode* const u, short depth) {
+    __printTabs(depth - 1);
+    if (u->Generation != 1) {
+        file_out << "<";
+        file_out << u->tag.TagName;
+        if (u->tag.key_value.size()) {
+            for (auto& y : u->tag.key_value) {
+                file_out << " " << y.first << "=\"" << y.second << "\"";
+            }
+        }
+        file_out << ">\n";
+        if (u->Content.size()) {
+            __printTabs(depth);
+            file_out << u->Content << "\n";
+        }
+    }
+    for (auto& x : u->Children) {
+        __printTree(x, depth + 1);
+    }
+    __printTabs(depth - 1);
+    if (u->Generation != 1) {
+        file_out << "</" << u->tag.TagName << ">\n";
+    }
+}
+void XmlDocument::__writeHeader() {
+    using namespace std;
+    assert(file_out.is_open() && file_out.good());
+    file_out.seekp(std::ios_base::beg);
+    file_out << xmlHeader << " "
+             << "version=\"" << FileInfo.version << "\" encoding=\""
+             << FileInfo.encoding << "\" standalone=\""
+             << (FileInfo.isalone ? "yes" : "no") << "\" ?>\n";
+}
+bool XmlDocument::saveFile(const std::string& filename) {
+    try {
+        try {
+            file_out.close();
+            __clearIOstate();
+        } catch (...) {
+            ;
+        }
+        file_out.open(filename, std::ofstream::out | std::ofstream::trunc);
+    } catch (const std::ios_base::failure& e) {
+        std::cerr << e.what() << std::endl;
+        return false;
+    }
+    __writeHeader();
+    __printTree(Treeroot, (short)0);
+    return true;
+}
 bool XmlDocument::loadFile() { return loadFile(Filename); }
-bool XmlDocument::saveFile() const { return saveFile(Filename); }
+bool XmlDocument::saveFile() { return saveFile(Filename); }
 int XmlDocument::__ignore(std::string& buffer, std::string::const_iterator& l,
                           std::string::const_iterator& r, const char* header,
                           const char* End, bool& status) {
     using std::string;
-    auto len = strlen(header), lene = strlen(End);
+    auto lene = strlen(End);
     if (!status) {
         auto s = buffer.find(header), t = buffer.find(End);
         //两者在同一行
@@ -67,7 +119,7 @@ int XmlDocument::__ignore(std::string& buffer, std::string::const_iterator& l,
         } else
             return 1;  // continue
     }
-    l = buffer.cbegin(),r = buffer.cend();
+    l = buffer.cbegin(), r = buffer.cend();
     return 0;
 }
 void XmlDocument::parse() {
@@ -199,10 +251,10 @@ void XmlDocument::__getXMLFileInfo(const std::string& line) {
 void XmlDocument::__clearIOstate() { file_in.clear(), file_out.clear(); }
 void XmlDocument::printTree() {
 #ifdef DEBUG
-    __printTree(Treeroot, 1);
+    __printTreeDebug(Treeroot, 1);
 #endif
 }
-void XmlDocument::__printTree(XmlTreeNode* now, int depth) {
+void XmlDocument::__printTreeDebug(XmlTreeNode* now, int depth)const {
     for (int i = 1; i <= depth; ++i) std::cout << "--";
     std::cout << "[Start] " << now->tag.TagName << "\n";
     for (auto& x : now->tag.key_value) {
@@ -214,7 +266,7 @@ void XmlDocument::__printTree(XmlTreeNode* now, int depth) {
         std::cout << "[Content] " << now->Content << "\n";
     }
     for (auto& x : now->Children) {
-        __printTree(x, depth + 1);
+        __printTreeDebug(x, depth + 1);
     }
     for (int i = 1; i <= depth; ++i) std::cout << "--";
     std::cout << "[End] " << now->tag.TagName << "\n";

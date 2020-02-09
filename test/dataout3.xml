@@ -1,0 +1,23 @@
+<?xml version="114.514" encoding="UTF-8" standalone="no" ?>
+<ToDo>
+	<Item distance="close" priority="2">
+		Go to the
+		<bold>
+			Toy store!
+		</bold>
+	</Item>
+	<Item distance="far" priority="1">
+		Talk to:
+		<Meeting where="School">
+			<Attendee name="Marple" position="teacher">
+			</Attendee>
+			<Attendee name="Voel" position="counselor">
+			</Attendee>
+		</Meeting>
+		<Meeting where="Lunch">
+		</Meeting>
+	</Item>
+	<Item distance="here" priority="2">
+		Do bills
+	</Item>
+</ToDo>

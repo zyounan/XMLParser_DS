@@ -76,10 +76,10 @@ class XmlDocument {
     XmlDocument& operator=(const XmlDocument&) = delete;
     virtual ~XmlDocument();
     bool loadFile(const std::string&);
-    bool saveFile(const std::string&) const;
+    bool saveFile(const std::string&);
     //使用当前的文件名
     bool loadFile();
-    bool saveFile() const;
+    bool saveFile();
     void parse();
 
     void printTree();
@@ -102,7 +102,10 @@ class XmlDocument {
     void __init();
     void __getXMLFileInfo(const std::string&);
     void __clearIOstate();
-    void __printTree(XmlTreeNode*, int);
+    void __printTreeDebug(XmlTreeNode*, int)const;
+    void __printTree(XmlTreeNode*const,short);
+    void __printTabs(short);
+    void __writeHeader();
     void __destroyAll(XmlTreeNode*);
     //去除两侧空白
     std::string __trimString(const std::string&);
