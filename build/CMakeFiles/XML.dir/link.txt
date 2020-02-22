@@ -1,1 +1,0 @@
-/usr/bin/g++-8    -std=c++1z  -O0 -Wall -g2 -ggdb -lboost_regex -L/usr/local/lib/   CMakeFiles/XML.dir/src/main.cpp.o CMakeFiles/XML.dir/src/test.cpp.o CMakeFiles/XML.dir/src/xmlfile.cpp.o  -o ../bin/XML  -L/usr/local/lib -rdynamic /usr/local/lib/libboost_regex.so.1.72.0 -Wl,-rpath,/usr/local/lib 

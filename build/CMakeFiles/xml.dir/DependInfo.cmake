@@ -4,16 +4,13 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/root/XML/src/main.cpp" "/root/XML/build/CMakeFiles/XML.dir/src/main.cpp.o"
-  "/root/XML/src/test.cpp" "/root/XML/build/CMakeFiles/XML.dir/src/test.cpp.o"
-  "/root/XML/src/xmlfile.cpp" "/root/XML/build/CMakeFiles/XML.dir/src/xmlfile.cpp.o"
+  "/root/XML/src/test.cpp" "/root/XML/build/CMakeFiles/xml.dir/src/test.cpp.o"
+  "/root/XML/src/xml.cpp" "/root/XML/build/CMakeFiles/xml.dir/src/xml.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
 # Preprocessor definitions for this target.
 set(CMAKE_TARGET_DEFINITIONS_CXX
-  "BOOST_ALL_NO_LIB"
-  "BOOST_REGEX_DYN_LINK"
   "DEBUG"
   )
 

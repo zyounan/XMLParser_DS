@@ -114,44 +114,17 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named XML
+# Target rules for targets named xml
 
 # Build rule for target.
-XML: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 XML
-.PHONY : XML
+xml: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 xml
+.PHONY : xml
 
 # fast build rule for target.
-XML/fast:
-	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/build
-.PHONY : XML/fast
-
-src/main.o: src/main.cpp.o
-
-.PHONY : src/main.o
-
-# target to build an object file
-src/main.cpp.o:
-	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/src/main.cpp.o
-.PHONY : src/main.cpp.o
-
-src/main.i: src/main.cpp.i
-
-.PHONY : src/main.i
-
-# target to preprocess a source file
-src/main.cpp.i:
-	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/src/main.cpp.i
-.PHONY : src/main.cpp.i
-
-src/main.s: src/main.cpp.s
-
-.PHONY : src/main.s
-
-# target to generate assembly for a file
-src/main.cpp.s:
-	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/src/main.cpp.s
-.PHONY : src/main.cpp.s
+xml/fast:
+	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/build
+.PHONY : xml/fast
 
 src/test.o: src/test.cpp.o
 
@@ -159,7 +132,7 @@ src/test.o: src/test.cpp.o
 
 # target to build an object file
 src/test.cpp.o:
-	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/src/test.cpp.o
+	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/src/test.cpp.o
 .PHONY : src/test.cpp.o
 
 src/test.i: src/test.cpp.i
@@ -168,7 +141,7 @@ src/test.i: src/test.cpp.i
 
 # target to preprocess a source file
 src/test.cpp.i:
-	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/src/test.cpp.i
+	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/src/test.cpp.i
 .PHONY : src/test.cpp.i
 
 src/test.s: src/test.cpp.s
@@ -177,35 +150,35 @@ src/test.s: src/test.cpp.s
 
 # target to generate assembly for a file
 src/test.cpp.s:
-	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/src/test.cpp.s
+	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/src/test.cpp.s
 .PHONY : src/test.cpp.s
 
-src/xmlfile.o: src/xmlfile.cpp.o
+src/xml.o: src/xml.cpp.o
 
-.PHONY : src/xmlfile.o
+.PHONY : src/xml.o
 
 # target to build an object file
-src/xmlfile.cpp.o:
-	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/src/xmlfile.cpp.o
-.PHONY : src/xmlfile.cpp.o
+src/xml.cpp.o:
+	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/src/xml.cpp.o
+.PHONY : src/xml.cpp.o
 
-src/xmlfile.i: src/xmlfile.cpp.i
+src/xml.i: src/xml.cpp.i
 
-.PHONY : src/xmlfile.i
+.PHONY : src/xml.i
 
 # target to preprocess a source file
-src/xmlfile.cpp.i:
-	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/src/xmlfile.cpp.i
-.PHONY : src/xmlfile.cpp.i
+src/xml.cpp.i:
+	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/src/xml.cpp.i
+.PHONY : src/xml.cpp.i
 
-src/xmlfile.s: src/xmlfile.cpp.s
+src/xml.s: src/xml.cpp.s
 
-.PHONY : src/xmlfile.s
+.PHONY : src/xml.s
 
 # target to generate assembly for a file
-src/xmlfile.cpp.s:
-	$(MAKE) -f CMakeFiles/XML.dir/build.make CMakeFiles/XML.dir/src/xmlfile.cpp.s
-.PHONY : src/xmlfile.cpp.s
+src/xml.cpp.s:
+	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/src/xml.cpp.s
+.PHONY : src/xml.cpp.s
 
 # Help Target
 help:
@@ -214,17 +187,14 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
-	@echo "... XML"
+	@echo "... xml"
 	@echo "... rebuild_cache"
-	@echo "... src/main.o"
-	@echo "... src/main.i"
-	@echo "... src/main.s"
 	@echo "... src/test.o"
 	@echo "... src/test.i"
 	@echo "... src/test.s"
-	@echo "... src/xmlfile.o"
-	@echo "... src/xmlfile.i"
-	@echo "... src/xmlfile.s"
+	@echo "... src/xml.o"
+	@echo "... src/xml.i"
+	@echo "... src/xml.s"
 .PHONY : help
 
 

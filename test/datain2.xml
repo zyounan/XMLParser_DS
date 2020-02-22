@@ -1,9 +1,8 @@
 <?xml version='1.0' standalone='no' ?>
 <ToDo>
-    <Item priority=1 distance='close'> Go to the <bold>
+  <Item priority=1 distance='close'> Go to the <bold>
       store!</bold>
-    </Item>
-    <Item priority="2" distance='none'> Do bills   </Item>
-    <Item priority="2" distance='far back'> Look for Evil Dinosaurs! </Item>
-
+  </Item>
+  <Item priority="2" distance='none'> Do bills   </Item>
+  <Item priority="2" distance='far back'> Look for Evil Dinosaurs! </Item>
 </ToDo>
