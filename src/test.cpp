@@ -3,9 +3,9 @@
 int main() {
     using namespace std;
     using namespace xmlParser;
-    freopen("/root/myXmlParser/test/dataout1.xml", "w", stdout);
+    freopen("/root/XML/test/dataout1.xml", "w", stdout);
     XmlDocument file;
-    file.open("/root/myXmlParser/test/datain1.xml");
+    file.open("/root/XML/test/datain1.xml");
     file.Parse();
 
     return 0;

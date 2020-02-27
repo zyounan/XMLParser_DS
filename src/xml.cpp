@@ -80,20 +80,47 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
         if (__isInComment) {
             XmlUtil::skipWhiteSpace(pl, pr, line);
             auto pos = str.find("-->", pl - str.begin());
-            if (pos == string::npos) {
-                __isInComment = true;
-                content = string(pl, str.end());
-                __nextLine(str, pl, pr, line);
-            } else {
-                __isInComment = false;
-                content = string(pl, str.begin() + pos - 1);
-                pl = str.begin() + pos + commentHeaderLen - 1;
-            }
             auto nxt = cur->getLastSonByType(XmlSyntax::XmlComment);
             if (!nxt) {
                 throw XmlException(XmlError::XML_ERROR_PARSING_COMMENT);
             }
-            nxt->content += content;
+            content.clear();
+            if (pos == string::npos) {
+                __isInComment = true;
+                content = string(pl, str.end());
+                __nextLine(str, pl, pr, line);
+                nxt->content += content;
+                continue;
+            } else {
+                __isInComment = false;
+                if (static_cast<int>(pos - 1) >
+                    pl - str.begin())  //某一行单独以 --> 结尾
+                    content = string(pl, str.begin() + pos);
+                pl = str.begin() + pos + commentHeaderLen - 1;
+                nxt->content += content;
+            }
+        } else if (__isInCDATA) {
+            // CDATA
+            XmlUtil::skipWhiteSpace(pl, pr, line);
+            auto pos = str.find("]]>", pl - str.begin());
+            auto nxt = cur->getLastSonByType(XmlSyntax::XmlCDATA);
+            if (!nxt) {
+                throw XmlException(XmlError::XML_ERROR_PARSING_CDATA);
+            }
+            if (pos == string::npos) {
+                __isInCDATA = true;
+                content = string(pl, str.end());
+                __nextLine(str, pl, pr, line);
+                nxt->content += content;
+                continue;
+            } else {
+                __isInCDATA = false;
+                if (static_cast<int>(pos - 1) >
+                    pl - str.begin())  // 某一行单独以 ]]> 结尾
+                    content = string(pl, str.begin() + pos);
+                pl = str.begin() + pos + 3;
+                nxt->content += content;
+            }
         }
         auto res = identify(pl, pr, line);
         switch (res) {
@@ -110,7 +137,7 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
                     //空标签却不为空
                     throw XmlException(XmlError::XML_ERROR_PARSING_ATTRIBUTE);
                 }
-                cur->content = content;
+                cur->content += content;
             } break;
             case 1: {
                 // xml头
@@ -137,7 +164,7 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
                     content = string(pl, str.end());
                     __nextLine(str, pl, pr, line);
                 } else {
-                    content = string(pl, str.begin() + pos - 1);
+                    content = string(pl, str.begin() + pos);
                     pl = str.begin() + pos + commentHeaderLen - 1;
                 }
                 XmlNode* node = new XmlNode;
@@ -145,9 +172,24 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
                 node->type = XmlSyntax::XmlComment;
                 node->content = content;
             } break;
-            case 3:
+            case 3: {
                 // CDATA
-                break;
+                content.clear();
+                pl += cdataHeaderLen;
+                auto pos = str.find("]]>", pl - str.begin());
+                if (pos == string::npos) {
+                    __isInCDATA = true;
+                    content = string(pl, str.end());
+                    __nextLine(str, pl, pr, line);
+                } else {
+                    content = string(pl, str.begin() + pos - 1);
+                    pl = str.begin() + pos + 3;  //跳过尾部
+                }
+                XmlNode* node = new XmlNode;
+                cur->addNode(node);
+                node->type = XmlSyntax::XmlCDATA;
+                node->content = content;
+            } break;
             case 4:
                 // dtd
                 break;
@@ -180,7 +222,6 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
                     } else {
                         // 标签起始
                         node->Tag.tagName = content;
-
                         if (XmlUtil::isWhite(*pl)) {
                             __parseKeyValue(str, node, pl, pr);
                         }
@@ -206,25 +247,18 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
                 } else
                     throw XmlException(XmlError::XML_ERROR_MISMATCHED_ELEMENT);
             } break;
-            case 6:
-                break;
-            case 7:
-                break;
-            case 8:
-                break;
             default:
                 throw XmlException(XmlError::XML_ERROR_PARSING_UNKNOWN);
         }
     }
 }
 void XmlDocument::printTree(XmlNode* u, int d) {
-    static auto __printTab = [](int d) {
-        for (int i = 1; i <= d; ++i) std::cout << "\t";
+    static auto __printTab = [](int y) {
+        for (int i = 1; i <= y; ++i) std::cout << "\t";
     };
     using namespace std;
-    __printTab(d);
     if (!u->depth && u->Tag.key_value.size()) {
-        cout << "<? xml ";
+        cout << "<?xml ";
         for (auto& x : u->Tag.key_value) {
             cout << x.first << "="
                  << "\"" << x.second << "\" ";
@@ -236,6 +270,9 @@ void XmlDocument::printTree(XmlNode* u, int d) {
         if (x->type == XmlSyntax::XmlComment) {
             cout << "<!-- ";
             cout << x->content << " -->";
+        } else if (x->type == XmlSyntax::XmlCDATA) {
+            cout << cdataHeader << " ";
+            cout << x->content << " ]]>";
         } else {
             cout << "<" << x->Tag.tagName;
             if (x->Tag.key_value.size()) {
@@ -243,14 +280,18 @@ void XmlDocument::printTree(XmlNode* u, int d) {
                     cout << " " << y.first << "="
                          << "\"" << y.second << "\"";
             }
-            cout << ">\n";
+            cout << ">";
             if (x->content.size()) {
+                cout << endl;
+                __printTab(d);
                 cout << x->content;
             }
         }
         cout << endl;
         printTree(x, d + 1);
-        if (x->type != XmlSyntax::XmlComment) {
+        if (x->type != XmlSyntax::XmlComment &&
+            x->type != XmlSyntax::XmlCDATA) {
+            __printTab(d);
             cout << "</" << x->Tag.tagName << ">\n";
         }
     }

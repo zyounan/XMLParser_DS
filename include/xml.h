@@ -5,7 +5,7 @@ template <typename T>
 struct reversion_wrapper {
     T& iterable;
 };
-// range 循环基于 std::begin() 和 std::end(); 
+// range 循环基于 std::begin() 和 std::end();
 template <typename T>
 inline auto begin(const reversion_wrapper<T>& w) {
     return std::rbegin(w.iterable);
@@ -28,6 +28,7 @@ enum class XmlSyntax {
     XmlTest,
     XmlDeclaration,
     XmlEmptylabel,
+    XmlCDATA,
     XmlUnknown
 };
 enum class XmlError {
@@ -136,7 +137,7 @@ class XmlUtil {
 class XmlNode {
     friend class XmlDocument;
     friend class XmlPrinter;
-    using Type_KeyValue = std::map<std::string, std::string>;
+    using Type_KeyValue = std::unordered_map<std::string, std::string>;
     using Type_Son = std::vector<XmlNode*>;
 
    private:
@@ -206,6 +207,7 @@ class XmlDocument {
     std::ifstream in;
     std::ofstream out;
     bool __isInComment = false;
+    bool __isInCDATA = false;
     using It = std::string::iterator;
     static constexpr const char* xmlRaw[] = {
         "<?", "<!--", "<![CDATA[", "<!", "<",
