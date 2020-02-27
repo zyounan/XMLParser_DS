@@ -65,13 +65,22 @@ void XmlDocument::__nextLine(std::string& str, It& pl, It& pr, int& line) {
     ++line;
 }
 void XmlDocument::__checkEnd(std::string& str, It& pl, It& pr, int& res) {}
-void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
+void XmlDocument::printInfo(const std::string& str, XmlParserInfo x, int line,
+                            int which) {
+    using std::cerr, std::endl;
+    static const char* sss[] = {"[Warning]", "[Error]", "[Info]"};
+    cerr << FileName << ":" << line << ":" << which << ": "
+         << sss[static_cast<int>(x)] << " : " << str << std::endl;
+}
+void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                           It& pl, It& pr) {
     using namespace std;
     if (pl == pr) {
         __nextLine(str, pl, pr, line);
     }
     if (depth > maxDepth) {
+        printInfo("maxDepth exceeded.", XmlParserInfo::Error, line,
+                  static_cast<int>(pl - str.begin() + 1));
         throw XmlException(XmlError::XML_ELEMENT_DEPTH_EXCEEDED);
         return;
     }
@@ -82,6 +91,8 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
             auto pos = str.find("-->", pl - str.begin());
             auto nxt = cur->getLastSonByType(XmlSyntax::XmlComment);
             if (!nxt) {
+                printInfo("comment format is not valid.", XmlParserInfo::Error,
+                          line, static_cast<int>(pl - str.begin() + 1));
                 throw XmlException(XmlError::XML_ERROR_PARSING_COMMENT);
             }
             content.clear();
@@ -105,6 +116,8 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
             auto pos = str.find("]]>", pl - str.begin());
             auto nxt = cur->getLastSonByType(XmlSyntax::XmlCDATA);
             if (!nxt) {
+                printInfo("Missing CDATA begining.", XmlParserInfo::Error, line,
+                          static_cast<int>(pl - str.begin() + 1));
                 throw XmlException(XmlError::XML_ERROR_PARSING_CDATA);
             }
             if (pos == string::npos) {
@@ -121,6 +134,31 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
                 pl = str.begin() + pos + 3;
                 nxt->content += content;
             }
+        } else if (__isIndtd) {
+            // dtd
+            XmlUtil::skipWhiteSpace(pl, pr, line);
+            auto pos = str.find("]>", pl - str.begin());
+            auto nxt = cur->getLastSonByType(XmlSyntax::XmlUnknown);
+            if (!nxt) {
+                printInfo("Missing dtd begining.", XmlParserInfo::Error, line,
+                          static_cast<int>(pl - str.begin() + 1));
+
+                throw XmlException(XmlError::XML_ERROR_PARSING_UNKNOWN);
+            }
+            if (pos == string::npos) {
+                __isIndtd = true;
+                content = string(pl, str.end());
+                __nextLine(str, pl, pr, line);
+                nxt->content += content;
+                continue;
+            } else {
+                __isIndtd = false;
+                if (static_cast<int>(pos - 1) >
+                    pl - str.begin())  // 某一行单独以 ]> 结尾
+                    content = string(pl, str.begin() + pos);
+                pl = str.begin() + pos + 2;
+                nxt->content += content;
+            }
         }
         auto res = identify(pl, pr, line);
         switch (res) {
@@ -135,6 +173,8 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
                 }
                 if (cur->type == XmlSyntax::XmlEmptylabel && content.size()) {
                     //空标签却不为空
+                    printInfo("Missing dtd begining.", XmlParserInfo::Error,
+                              line, static_cast<int>(pl - str.begin() + 1));
                     throw XmlException(XmlError::XML_ERROR_PARSING_ATTRIBUTE);
                 }
                 cur->content += content;
@@ -142,7 +182,11 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
             case 1: {
                 // xml头
                 content.clear();
-                if (!root) throw XmlException(XmlError::XML_NO_TEXT_NODE);
+                if (!root) {
+                    printInfo("Missing tree root.", XmlParserInfo::Error, line,
+                              static_cast<int>(pl - str.begin() + 1));
+                    throw XmlException(XmlError::XML_NO_TEXT_NODE);
+                }
                 pl += 2;  //跳过"<?"
                 while (!XmlUtil::isWhite(*pl) && XmlUtil::isNameChar(*pl)) {
                     content += *(pl++);
@@ -151,8 +195,11 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
                 content.clear();
                 __parseKeyValue(str, cur, pl, pr);
                 pl += 2;  //跳过?>
-                if (str.rfind("?>") == string::npos)
+                if (str.rfind("?>") == string::npos) {
+                    printInfo("Broken header.", XmlParserInfo::Error, line,
+                              static_cast<int>(pl - str.begin() + 1));
                     throw XmlException(XmlError::XML_ERROR_MISMATCHED_ELEMENT);
+                }
             } break;
             case 2: {
                 //注释
@@ -176,9 +223,33 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
                 // CDATA
                 content.clear();
                 pl += cdataHeaderLen;
-                auto pos = str.find("]]>", pl - str.begin());
+                auto pos = str.find("]>", pl - str.begin());
                 if (pos == string::npos) {
                     __isInCDATA = true;
+                    content = string(pl, str.end());
+                    __nextLine(str, pl, pr, line);
+                } else {
+                    content = string(pl, str.begin() + pos - 1);
+                    pl = str.begin() + pos + 2;  //跳过尾部
+                }
+                XmlNode* node = new XmlNode;
+                cur->addNode(node);
+                node->type = XmlSyntax::XmlUnknown;
+                node->content = content;
+            } break;
+            case 4: {
+                // DTD
+                printInfo(
+                    "xml dtd header(s) detected. This parser "
+                    "doesn't support dtd header and it will be "
+                    "ignored.",
+                    XmlParserInfo::Warning, line,
+                    static_cast<int>(pl - str.begin()));
+                content.clear();
+                pl += cdataHeaderLen;
+                auto pos = str.find("]]>", pl - str.begin());
+                if (pos == string::npos) {
+                    __isIndtd = true;
                     content = string(pl, str.end());
                     __nextLine(str, pl, pr, line);
                 } else {
@@ -187,12 +258,9 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
                 }
                 XmlNode* node = new XmlNode;
                 cur->addNode(node);
-                node->type = XmlSyntax::XmlCDATA;
+                node->type = XmlSyntax::XmlUnknown;
                 node->content = content;
             } break;
-            case 4:
-                // dtd
-                break;
             case 5: {
                 //普通标签
                 ++pl;  //跳过<
@@ -214,6 +282,9 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
                     if (isTagEnd) {
                         //标签不匹配
                         if (content != cur->Tag.tagName || *pl != '>') {
+                            printInfo("Label doesn't match!",
+                                      XmlParserInfo::Error, line,
+                                      static_cast<int>(pl - str.begin() + 1));
                             throw XmlException(
                                 XmlError::XML_ERROR_PARSING_ELEMENT);
                         }
@@ -231,6 +302,9 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
                             node->type = XmlSyntax::XmlEmptylabel;
                         }
                         if (*pl != '>' && !XmlUtil::isNameChar(*pl)) {
+                            printInfo("Broken header.", XmlParserInfo::Error,
+                                      line,
+                                      static_cast<int>(pl - str.begin() + 1));
                             throw XmlException(
                                 XmlError::XML_ERROR_PARSING_ELEMENT);
                         } else if (*pl == '>') {
@@ -244,10 +318,16 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int line, std::string& str,
                         }
                     }
 
-                } else
+                } else {
+                    printInfo("Element label doesn't match.",
+                              XmlParserInfo::Error, line,
+                              static_cast<int>(pl - str.begin() + 1));
                     throw XmlException(XmlError::XML_ERROR_MISMATCHED_ELEMENT);
+                }
             } break;
             default:
+                printInfo("Unknown content.", XmlParserInfo::Error, line,
+                          static_cast<int>(pl - str.begin() + 1));
                 throw XmlException(XmlError::XML_ERROR_PARSING_UNKNOWN);
         }
     }
@@ -266,6 +346,7 @@ void XmlDocument::printTree(XmlNode* u, int d) {
         cout << "?>\n";
     }
     for (auto& x : u->next) {
+        if (x->type == XmlSyntax::XmlUnknown) continue;
         __printTab(d);
         if (x->type == XmlSyntax::XmlComment) {
             cout << "<!-- ";
@@ -303,7 +384,7 @@ void XmlDocument::parse(XmlNode* cur, int depth, int line) {
         getline(in, str);
         XmlUtil::skipWhiteSpace(str, line);
         auto pl = str.begin(), pr = str.end();
-        __parse(cur, depth, line, str, pl, pr);
+        __parse(cur, depth, curLine, str, pl, pr);
     } catch (const ifstream::failure& e) {
         // cout << "做完了" << endl;
         printTree(root, 0);

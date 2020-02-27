@@ -31,6 +31,11 @@ enum class XmlSyntax {
     XmlCDATA,
     XmlUnknown
 };
+enum class XmlParserInfo{
+    Warning,
+    Error,
+    Info
+};
 enum class XmlError {
     XML_SUCCESS = 0,
     XML_NO_ATTRIBUTE,
@@ -208,6 +213,8 @@ class XmlDocument {
     std::ofstream out;
     bool __isInComment = false;
     bool __isInCDATA = false;
+    bool __isIndtd = false;
+    int curLine = 1;
     using It = std::string::iterator;
     static constexpr const char* xmlRaw[] = {
         "<?", "<!--", "<![CDATA[", "<!", "<",
@@ -224,9 +231,10 @@ class XmlDocument {
     static const int cdataHeaderLen = 9;
     static const int dtdHeaderLen = 2;
     static const int elementHeaderLen = 1;
+    void printInfo(const std::string&,XmlParserInfo,int,int);
     void printTree(XmlNode*, int);
     void parse(XmlNode*, int, int);
-    void __parse(XmlNode*, int, int, std::string&, It&, It&);
+    void __parse(XmlNode*, int, int&, std::string&, It&, It&);
     void __clearState();
     void __setOpenstate();
     void __parseKeyValue(std::string&, XmlNode*, It&, It&);
