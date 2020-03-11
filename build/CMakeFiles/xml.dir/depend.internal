@@ -11,9 +11,21 @@ CMakeFiles/xml.dir/src/test.cpp.o
  /root/anaconda3/include/ncursesw/ncurses_dll.h
  /root/anaconda3/include/ncursesw/unctrl.h
 CMakeFiles/xml.dir/src/ui.cpp.o
+ ../include/cxxcurses/cxxcurses.hpp
+ ../include/cxxcurses/print.hpp
+ ../include/cxxcurses/print/attribute.hpp
+ ../include/cxxcurses/print/color.hpp
+ ../include/cxxcurses/print/color_pair.hpp
+ ../include/cxxcurses/print/glyph.hpp
+ ../include/cxxcurses/print/glyph_string.hpp
+ ../include/cxxcurses/terminal.hpp
+ ../include/cxxcurses/terminal/cursor.hpp
+ ../include/cxxcurses/terminal/initializer.hpp
+ ../include/cxxcurses/utility.hpp
  ../include/stdc++.h
  ../include/ui.h
  /root/XML/src/ui.cpp
+ /root/anaconda3/include/curses.h
  /root/anaconda3/include/ncurses.h
  /root/anaconda3/include/ncursesw/curses.h
  /root/anaconda3/include/ncursesw/ncurses_dll.h

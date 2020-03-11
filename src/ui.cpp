@@ -1,6 +1,7 @@
 #include "ui.h"
-#include <ncurses.h>
 #include "stdc++.h"
+#include "cxxcurses/cxxcurses.hpp"
+
 namespace UI {
 const char *versionInfo = "v0.1", *lastBuild = "2020/03";
 const char* aboutInfo =
@@ -36,6 +37,7 @@ void alignCenter(const std::string& str) {
 }
 void showAbout() {
     using std::string;
+    cxxcurses::initializer init;
     
     initscr();
     curs_set(0);
