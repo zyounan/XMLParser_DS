@@ -1,6 +1,6 @@
 #include "ui.h"
-#include "stdc++.h"
 #include <ncurses.h>
+#include "stdc++.h"
 namespace UI {
 const char *versionInfo = "v0.1", *lastBuild = "2020/03";
 const char* aboutInfo =
