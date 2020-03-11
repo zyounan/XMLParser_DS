@@ -1,7 +1,5 @@
+<?xml version='1.0' standalone='no' ?>
 <breakfast_menu>
-    <!DOCTYPE note[
-            <!ELEMENT note(a,b,c,d,e)>
-    ]>
     <food>
         <name>
             <name2>
@@ -26,9 +24,6 @@
                 </name3>
             </name2>
         </name>
-        <!DOCTYPE note[
-            <!ELEMENT note(a,b,c,d,e)>
-        ]>
         <price>$5.95</price>
         <description>
 two of our famous Belgian Waffles with plenty of real maple syrup

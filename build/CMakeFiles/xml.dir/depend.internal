@@ -3,8 +3,21 @@
 
 CMakeFiles/xml.dir/src/test.cpp.o
  ../include/stdc++.h
+ ../include/ui.h
  ../include/xml.h
  /root/XML/src/test.cpp
+ /root/anaconda3/include/ncurses.h
+ /root/anaconda3/include/ncursesw/curses.h
+ /root/anaconda3/include/ncursesw/ncurses_dll.h
+ /root/anaconda3/include/ncursesw/unctrl.h
+CMakeFiles/xml.dir/src/ui.cpp.o
+ ../include/stdc++.h
+ ../include/ui.h
+ /root/XML/src/ui.cpp
+ /root/anaconda3/include/ncurses.h
+ /root/anaconda3/include/ncursesw/curses.h
+ /root/anaconda3/include/ncursesw/ncurses_dll.h
+ /root/anaconda3/include/ncursesw/unctrl.h
 CMakeFiles/xml.dir/src/xml.cpp.o
  ../include/stdc++.h
  ../include/xml.h

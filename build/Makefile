@@ -153,6 +153,33 @@ src/test.cpp.s:
 	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/src/test.cpp.s
 .PHONY : src/test.cpp.s
 
+src/ui.o: src/ui.cpp.o
+
+.PHONY : src/ui.o
+
+# target to build an object file
+src/ui.cpp.o:
+	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/src/ui.cpp.o
+.PHONY : src/ui.cpp.o
+
+src/ui.i: src/ui.cpp.i
+
+.PHONY : src/ui.i
+
+# target to preprocess a source file
+src/ui.cpp.i:
+	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/src/ui.cpp.i
+.PHONY : src/ui.cpp.i
+
+src/ui.s: src/ui.cpp.s
+
+.PHONY : src/ui.s
+
+# target to generate assembly for a file
+src/ui.cpp.s:
+	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/src/ui.cpp.s
+.PHONY : src/ui.cpp.s
+
 src/xml.o: src/xml.cpp.o
 
 .PHONY : src/xml.o
@@ -192,6 +219,9 @@ help:
 	@echo "... src/test.o"
 	@echo "... src/test.i"
 	@echo "... src/test.s"
+	@echo "... src/ui.o"
+	@echo "... src/ui.i"
+	@echo "... src/ui.s"
 	@echo "... src/xml.o"
 	@echo "... src/xml.i"
 	@echo "... src/xml.s"

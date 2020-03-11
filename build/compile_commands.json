@@ -1,12 +1,17 @@
 [
 {
   "directory": "/root/XML/build",
-  "command": "/usr/bin/g++-8   -DDEBUG -I/root/XML/include -I/usr/local/include   -std=c++1z  -O0 -Wall -g2 -ggdb -L/usr/local/lib/   -o CMakeFiles/xml.dir/src/xml.cpp.o -c /root/XML/src/xml.cpp",
+  "command": "/usr/bin/g++-8   -DDEBUG -I/root/anaconda3/include -I/root/XML/include -I/usr/local/include   -std=c++1z  -O0 -Wall -g2 -ggdb -L/usr/local/lib/   -o CMakeFiles/xml.dir/src/ui.cpp.o -c /root/XML/src/ui.cpp",
+  "file": "/root/XML/src/ui.cpp"
+},
+{
+  "directory": "/root/XML/build",
+  "command": "/usr/bin/g++-8   -DDEBUG -I/root/anaconda3/include -I/root/XML/include -I/usr/local/include   -std=c++1z  -O0 -Wall -g2 -ggdb -L/usr/local/lib/   -o CMakeFiles/xml.dir/src/xml.cpp.o -c /root/XML/src/xml.cpp",
   "file": "/root/XML/src/xml.cpp"
 },
 {
   "directory": "/root/XML/build",
-  "command": "/usr/bin/g++-8   -DDEBUG -I/root/XML/include -I/usr/local/include   -std=c++1z  -O0 -Wall -g2 -ggdb -L/usr/local/lib/   -o CMakeFiles/xml.dir/src/test.cpp.o -c /root/XML/src/test.cpp",
+  "command": "/usr/bin/g++-8   -DDEBUG -I/root/anaconda3/include -I/root/XML/include -I/usr/local/include   -std=c++1z  -O0 -Wall -g2 -ggdb -L/usr/local/lib/   -o CMakeFiles/xml.dir/src/test.cpp.o -c /root/XML/src/test.cpp",
   "file": "/root/XML/src/test.cpp"
 }
 ]
