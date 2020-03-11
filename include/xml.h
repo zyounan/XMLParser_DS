@@ -85,7 +85,7 @@ class XmlException : public std::exception {
 
    public:
     XmlException(const XmlError What)
-        : fuck("[ Error ] XmlParser got an exception : \n") {
+        : fuck("[Error] : XmlParser got an exception : ") {
         fuck += __ErrName[static_cast<int>(What)];
     }
     virtual const char* what() const noexcept { return fuck.c_str(); }

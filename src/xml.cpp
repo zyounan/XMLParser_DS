@@ -317,7 +317,6 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                             continue;
                         }
                     }
-
                 } else {
                     printInfo("Element label doesn't match.",
                               XmlParserInfo::Error, line,
