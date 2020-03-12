@@ -6,6 +6,7 @@ int main() {
     using namespace xmlParser;
     using namespace UI;
     UI::init();
+    UI::loop();
     // freopen("/root/XML/test/dataout1.xml", "w", stdout);
     // XmlDocument file;
     // file.open("/root/XML/test/datain1.xml");

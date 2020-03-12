@@ -8,4 +8,5 @@ void moveCenter();
 void alignCenter(const std::string&);
 void showAbout();
 void init();
+void loop();
 }  // namespace UI

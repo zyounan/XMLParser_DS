@@ -23,4 +23,7 @@ namespace cxxcurses {
 
     return col | attr;
 }
+inline int flush(){
+    return ::refresh();
+}
 }  // namespace cxxcurses
