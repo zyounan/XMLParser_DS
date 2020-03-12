@@ -74,6 +74,12 @@ terminal/initializer.hpp
 curses.h
 -
 
+../include/reflect.h
+stdc++.h
+../include/stdc++.h
+cxxabi.h
+-
+
 ../include/stdc++.h
 cassert
 -
@@ -233,10 +239,18 @@ ncurses.h
 -
 stdc++.h
 ../include/stdc++.h
+reflect.h
+../include/reflect.h
 
 ../include/xml.h
 stdc++.h
 ../include/stdc++.h
+
+/root/XML/src/reflectWork.cpp
+stdc++.h
+/root/XML/src/stdc++.h
+reflect.h
+/root/XML/src/reflect.h
 
 /root/XML/src/test.cpp
 stdc++.h
@@ -249,12 +263,12 @@ ui.h
 /root/XML/src/ui.cpp
 ui.h
 /root/XML/src/ui.h
-ncurses.h
--
 cxxcurses/cxxcurses.hpp
 /root/XML/src/cxxcurses/cxxcurses.hpp
 stdc++.h
 /root/XML/src/stdc++.h
+reflect.h
+/root/XML/src/reflect.h
 
 /root/XML/src/xml.cpp
 xml.h

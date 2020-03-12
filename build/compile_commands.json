@@ -6,6 +6,11 @@
 },
 {
   "directory": "/root/XML/build",
+  "command": "/usr/bin/g++-8   -DDEBUG -I/root/anaconda3/include -I/root/XML/include -I/usr/local/include   -std=c++1z  -O0 -Wall -g2 -ggdb -L/usr/local/lib/   -o CMakeFiles/xml.dir/src/reflectWork.cpp.o -c /root/XML/src/reflectWork.cpp",
+  "file": "/root/XML/src/reflectWork.cpp"
+},
+{
+  "directory": "/root/XML/build",
   "command": "/usr/bin/g++-8   -DDEBUG -I/root/anaconda3/include -I/root/XML/include -I/usr/local/include   -std=c++1z  -O0 -Wall -g2 -ggdb -L/usr/local/lib/   -o CMakeFiles/xml.dir/src/xml.cpp.o -c /root/XML/src/xml.cpp",
   "file": "/root/XML/src/xml.cpp"
 },

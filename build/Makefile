@@ -126,6 +126,33 @@ xml/fast:
 	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/build
 .PHONY : xml/fast
 
+src/reflectWork.o: src/reflectWork.cpp.o
+
+.PHONY : src/reflectWork.o
+
+# target to build an object file
+src/reflectWork.cpp.o:
+	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/src/reflectWork.cpp.o
+.PHONY : src/reflectWork.cpp.o
+
+src/reflectWork.i: src/reflectWork.cpp.i
+
+.PHONY : src/reflectWork.i
+
+# target to preprocess a source file
+src/reflectWork.cpp.i:
+	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/src/reflectWork.cpp.i
+.PHONY : src/reflectWork.cpp.i
+
+src/reflectWork.s: src/reflectWork.cpp.s
+
+.PHONY : src/reflectWork.s
+
+# target to generate assembly for a file
+src/reflectWork.cpp.s:
+	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/src/reflectWork.cpp.s
+.PHONY : src/reflectWork.cpp.s
+
 src/test.o: src/test.cpp.o
 
 .PHONY : src/test.o
@@ -216,6 +243,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... xml"
 	@echo "... rebuild_cache"
+	@echo "... src/reflectWork.o"
+	@echo "... src/reflectWork.i"
+	@echo "... src/reflectWork.s"
 	@echo "... src/test.o"
 	@echo "... src/test.i"
 	@echo "... src/test.s"

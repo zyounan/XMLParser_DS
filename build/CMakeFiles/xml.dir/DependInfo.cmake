@@ -4,6 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
+  "/root/XML/src/reflectWork.cpp" "/root/XML/build/CMakeFiles/xml.dir/src/reflectWork.cpp.o"
   "/root/XML/src/test.cpp" "/root/XML/build/CMakeFiles/xml.dir/src/test.cpp.o"
   "/root/XML/src/ui.cpp" "/root/XML/build/CMakeFiles/xml.dir/src/ui.cpp.o"
   "/root/XML/src/xml.cpp" "/root/XML/build/CMakeFiles/xml.dir/src/xml.cpp.o"

@@ -69,7 +69,7 @@ CMAKE_BINARY_DIR = /root/XML/build
 CMakeFiles/xml.dir/all:
 	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/depend
 	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/root/XML/build/CMakeFiles --progress-num=1,2,3,4 "Built target xml"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/root/XML/build/CMakeFiles --progress-num=1,2,3,4,5 "Built target xml"
 .PHONY : CMakeFiles/xml.dir/all
 
 # Include target in all.
@@ -79,7 +79,7 @@ all: CMakeFiles/xml.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/xml.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /root/XML/build/CMakeFiles 4
+	$(CMAKE_COMMAND) -E cmake_progress_start /root/XML/build/CMakeFiles 5
 	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/xml.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /root/XML/build/CMakeFiles 0
 .PHONY : CMakeFiles/xml.dir/rule

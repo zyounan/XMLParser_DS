@@ -1,5 +1,6 @@
 file(REMOVE_RECURSE
   "CMakeFiles/xml.dir/src/ui.cpp.o"
+  "CMakeFiles/xml.dir/src/reflectWork.cpp.o"
   "CMakeFiles/xml.dir/src/xml.cpp.o"
   "CMakeFiles/xml.dir/src/test.cpp.o"
   "../bin/xml.pdb"

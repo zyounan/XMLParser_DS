@@ -1,7 +1,8 @@
 #include "ui.h"
-#include <ncurses.h>
 #include "cxxcurses/cxxcurses.hpp"
 #include "stdc++.h"
+#include "reflect.h"
+
 namespace UI {
 const char *versionInfo = "v0.1", *lastBuild = "2020/03";
 const char* aboutInfo =
@@ -52,8 +53,10 @@ void showAbout() {
 void init() {
     using std::cin;
     using std::string;
+    using namespace Reflect;
     cxxcurses::initializer init;
     showAbout();
+    initReflect();
 }
 void loop() {
     using namespace cxxcurses;

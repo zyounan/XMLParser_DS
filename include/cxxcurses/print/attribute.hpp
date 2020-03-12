@@ -29,7 +29,7 @@ void apply_attributes(WINDOW* window, T attr, Attrs... attrs) noexcept {
     for (auto& x : tmp) ans |= x;
     ::wattron(window, ans);
 }
-void apply_attributes(WINDOW* window,
+inline void apply_attributes(WINDOW* window,
                       const std::vector<attribute>& attrs) noexcept {
     for (const auto& attr : attrs) {
         ::wattron(window, static_cast<chtype>(attr));

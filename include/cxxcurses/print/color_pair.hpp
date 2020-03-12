@@ -27,29 +27,29 @@ struct color_pair {
                                         std::to_string(pair_num));
         }
     }
-    friend bool operator==(const color_pair& lhs, const color_pair& rhs) {
+    friend inline bool operator==(const color_pair& lhs, const color_pair& rhs) {
         return lhs.pair_number == rhs.pair_number;
     }
-    friend bool operator!=(const color_pair& lhs, const color_pair& rhs) {
+    friend inline bool operator!=(const color_pair& lhs, const color_pair& rhs) {
         return !(rhs == lhs);
     }
-    friend bool operator<(const color_pair& lhs, const color_pair& rhs) {
+    friend inline bool operator<(const color_pair& lhs, const color_pair& rhs) {
         return lhs.pair_number < rhs.pair_number;
     }
-    friend bool operator>(const color_pair& lhs, const color_pair& rhs) {
+    friend inline bool operator>(const color_pair& lhs, const color_pair& rhs) {
         return rhs < lhs;
     }
-    friend bool operator<=(const color_pair& lhs, const color_pair& rhs) {
+    friend inline bool operator<=(const color_pair& lhs, const color_pair& rhs) {
         return !(rhs < lhs);
     }
-    friend bool operator>=(const color_pair& lhs, const color_pair& rhs) {
+    friend inline bool operator>=(const color_pair& lhs, const color_pair& rhs) {
         return !(lhs < rhs);
     }
     unsigned long pair_number{0};
     static std::vector<type> initialized_pairs;
 };
 std::vector<color_pair::type> color_pair::initialized_pairs{};
-void apply_color(WINDOW* window, color_pair c) noexcept {
+inline void apply_color(WINDOW* window, color_pair c) noexcept {
     ::wattron(window, COLOR_PAIR(c.pair_number));
 }
 }  // namespace cxxcurses

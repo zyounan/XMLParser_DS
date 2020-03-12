@@ -1,1 +1,1 @@
-/usr/bin/g++-8    -std=c++1z  -O0 -Wall -g2 -ggdb -L/usr/local/lib/   CMakeFiles/xml.dir/src/ui.cpp.o CMakeFiles/xml.dir/src/xml.cpp.o CMakeFiles/xml.dir/src/test.cpp.o  -o ../bin/xml  -L/usr/local/lib -rdynamic -lcurses -lform -Wl,-rpath,/usr/local/lib 
+/usr/bin/g++-8    -std=c++1z  -O0 -Wall -g2 -ggdb -L/usr/local/lib/   CMakeFiles/xml.dir/src/ui.cpp.o CMakeFiles/xml.dir/src/reflectWork.cpp.o CMakeFiles/xml.dir/src/xml.cpp.o CMakeFiles/xml.dir/src/test.cpp.o  -o ../bin/xml  -L/usr/local/lib -rdynamic -lcurses -lform -Wl,-rpath,/usr/local/lib 

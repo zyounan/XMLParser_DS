@@ -15,7 +15,5 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 set(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin")
 include_directories("${PROJECT_SOURCE_DIR}/include" "/usr/local/include/")
 link_directories("/usr/local/lib/")
-add_executable(xml  # 输出名为XML的可执行文件
-${DIR_SRCS}
-)
+add_executable(xml  ${DIR_SRCS})
 target_link_libraries(xml ${CURSES_LIBRARIES})
