@@ -4,9 +4,11 @@
 namespace Reflect {
 class Test : public ReflectBase, DynamicCreator<Test> {
    public:
-    Test() { std::cout << "Reflect ok" << std::endl; }
+    Test() {
+        // std::cout << "Reflect ok" << std::endl;
+    }
     virtual void Work() {
-        std::cout << "114514" << std::endl;
+        // std::cout << "114514" << std::endl;
         return;
     }
 };

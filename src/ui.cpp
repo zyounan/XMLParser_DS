@@ -59,29 +59,103 @@ void init() {
     initReflect();
 }
 void loop() {
+    //TODO : 维护字符串缓冲区
+    static bool insertMode = false;
     using namespace cxxcurses;
-    set_echo(true);
-    cbreak();
+    set_echo(false);
+    keypad(stdscr, true);
+    // cbreak();
     char buffer[255];
-    cursor::set_visibility(cursor::visibility::normal);
+    cursor::set_visibility(cursor::visibility::high);
     int y = cursor::getCursor(cursor::getType::maxY) - 1;
+    int tot = 0;
+    cursor::setCursor(y, 0);
+    refresh();
     while (1) {
-        mvscanw(y, 0, "%s", buffer + 1);
-        while (buffer[1] != ':') {
-            clrtoeol();
-            print(y, 0)("{rS}",
-                        "Invalid command(s) without starting with \":\"!");
-            refresh();
-            getch();
-            cursor::setCursor(y, 0);
-            clrtoeol();
-            mvscanw(y, 0, "%s", buffer + 1);
-        }
-        clrtoeol();
-        // do something..
+        int c = getch();
+        switch (c) {
+            case '\n':
+            case '\r': {
+                if (buffer[1] != ':') {
+                    cursor::setCursor(y, 0);
+                    clearToEndOfLine();
+                    print(y, 0)("{rS}",
+                                "Invalid command(s) starting without \":\"!");
+                    cursor::set_visibility(cursor::visibility::invisible);
+                    cursor::setCursor(y, 0);
+                    refresh();
+                    char cc = getch();
+                    clearToEndOfLine();
+                    cursor::set_visibility(cursor::visibility::high);
 
-        refresh();
-    }
+                    insertMode = false;
+
+                    if (cc != '\n' && cc != '\r' && cc != '\t') {
+                        print(y, 0)(cc);
+                        refresh();
+                        buffer[tot = 1] = cc;
+                    } else
+                        buffer[tot = 0] = '\0';
+                    continue;
+                } else {
+                    cursor::setCursor(y, 0);
+                    clearToEndOfLine();
+                    // do something..
+                    buffer[tot = 0] = '\0';
+                    refresh();
+                    continue;
+                }
+                break;
+            }
+            case KEY_BACKSPACE:
+            case '\b': {
+                cursor::setCursor(-1,
+                                  cursor::getCursor(cursor::getType::X) - 1);
+                delch();
+                refresh();
+                break;
+            }
+            case KEY_DC: {
+                // DELETE
+                // cursor::setCursor(-1,
+                //                   cursor::getCursor(cursor::getType::X) + 1);
+                delch();
+                refresh();
+                break;
+            }
+            case KEY_LEFT: {
+                insertMode = 1;
+                cursor::set_visibility(cursor::visibility::normal);
+                cursor::setCursor(-1,
+                                  cursor::getCursor(cursor::getType::X) - 1);
+                break;
+            }
+            case KEY_RIGHT: {
+                insertMode = 1;
+                cursor::set_visibility(cursor::visibility::normal);
+                cursor::setCursor(-1,
+                                  cursor::getCursor(cursor::getType::X) + 1);
+                break;
+            }
+            default: {
+                if (++tot >= 255) {
+                    cursor::setCursor(y, 0);
+                    clearToEndOfLine();
+                    print(y, 0)("{yB}", "TOO LONG COMMANDS!!");
+                    buffer[tot = 0] = '\0';
+                    continue;
+                }
+                if (insertMode) {
+                    ::insnstr((const char*)&c, 1);
+                } else {
+                    print((char)c);
+                    buffer[tot] = c;
+                }
+                refresh();
+                break;
+            }
+        }  // end switch
+    }      // end main loop
     endwin();
 }
 };  // namespace UI

@@ -22,6 +22,7 @@ inline void print(const glyph_string& format) noexcept {
     auto y = fuck.first, x = fuck.second;
     format.print(y, x);
 }
+void print(const char c) { print(std::string(1, c)); }
 // move and print versions
 template <typename T, typename... Args>
 constexpr void print(const int y, const int x, const glyph_string& format_str,
@@ -42,6 +43,7 @@ struct printer {
         print(coords.first, x, glyph_string{format_str},
               (std::forward<Args>(args))...);
     }
+    void operator()(const char c) { this->operator()(std::string(1, c)); }
 };
 constexpr printer print(const int y, const int x) {
     return {std::make_pair(y, x)};
@@ -49,6 +51,7 @@ constexpr printer print(const int y, const int x) {
 // centered
 constexpr printer print(const int y) { return {std::make_pair(y, -1)}; }
 // print at current cursor position versions
+
 template <typename T, typename... Args>
 constexpr void print(const glyph_string& format_str, const T& arg,
                      Args&&... args) noexcept {
