@@ -1,0 +1,5 @@
+*.code-workspace
+/boost_1_72_0
+build
+/bin
+.vscode
