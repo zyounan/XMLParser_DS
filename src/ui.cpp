@@ -59,13 +59,13 @@ void init() {
     initReflect();
 }
 void loop() {
-    //TODO : 维护字符串缓冲区
     static bool insertMode = false;
+    const int _bufferSize = 255;
     using namespace cxxcurses;
     set_echo(false);
     keypad(stdscr, true);
-    // cbreak();
-    char buffer[255];
+    cbreak();
+    unsigned int buffer[_bufferSize];
     cursor::set_visibility(cursor::visibility::high);
     int y = cursor::getCursor(cursor::getType::maxY) - 1;
     int tot = 0;
@@ -76,6 +76,10 @@ void loop() {
         switch (c) {
             case '\n':
             case '\r': {
+                insertMode = tot = 0;
+                memset(buffer, 0, sizeof buffer);
+                error_check(mvinchnstr(y, 0, (buffer + 1), _bufferSize - 1),
+                            "Unexpected char from screen!");
                 if (buffer[1] != ':') {
                     cursor::setCursor(y, 0);
                     clearToEndOfLine();
@@ -93,15 +97,26 @@ void loop() {
                     if (cc != '\n' && cc != '\r' && cc != '\t') {
                         print(y, 0)(cc);
                         refresh();
-                        buffer[tot = 1] = cc;
+                        // buffer[tot = 1] = cc;
                     } else
-                        buffer[tot = 0] = '\0';
-                    continue;
+                        // buffer[tot = 0] = '\0';
+                        continue;
                 } else {
                     cursor::setCursor(y, 0);
                     clearToEndOfLine();
+                    unsigned int* p = buffer + 1;
+                    std::string res;
+                    res.reserve(_bufferSize);
+                    while (p != buffer + _bufferSize) {
+                        res.push_back(*(p += 2));
+                    }
+                    res.erase(std::find_if(res.rbegin(), res.rend(),
+                                           [&](char c) -> bool {
+                                               return !std::isspace(c);
+                                           })
+                                  .base(),
+                              res.end());
                     // do something..
-                    buffer[tot = 0] = '\0';
                     refresh();
                     continue;
                 }
@@ -111,6 +126,7 @@ void loop() {
             case '\b': {
                 cursor::setCursor(-1,
                                   cursor::getCursor(cursor::getType::X) - 1);
+                tot = std::max(tot - 1, 0);
                 delch();
                 refresh();
                 break;
@@ -119,8 +135,11 @@ void loop() {
                 // DELETE
                 // cursor::setCursor(-1,
                 //                   cursor::getCursor(cursor::getType::X) + 1);
+                int x = cursor::getCursor(cursor::getType::X);
+                tot = std::max(tot - 1, 0);
                 delch();
                 refresh();
+                if (x + 1 == tot) insertMode = false;
                 break;
             }
             case KEY_LEFT: {
@@ -133,23 +152,32 @@ void loop() {
             case KEY_RIGHT: {
                 insertMode = 1;
                 cursor::set_visibility(cursor::visibility::normal);
-                cursor::setCursor(-1,
-                                  cursor::getCursor(cursor::getType::X) + 1);
+                int x = cursor::getCursor(cursor::getType::X) + 1;
+                if (x <= tot) {
+                    cursor::setCursor(-1, x);
+                }
+                if (x > tot) insertMode = false;
+                break;
+            }
+            case KEY_HOME: {
+                insertMode = tot;
+                cursor::setCursor(y, 0);
+                break;
+            }
+            case KEY_END: {
+                insertMode = false;
+                cursor::setCursor(y, tot);
                 break;
             }
             default: {
-                if (++tot >= 255) {
-                    cursor::setCursor(y, 0);
-                    clearToEndOfLine();
-                    print(y, 0)("{yB}", "TOO LONG COMMANDS!!");
-                    buffer[tot = 0] = '\0';
-                    continue;
-                }
+                tot = std::min(tot + 1, _bufferSize);
                 if (insertMode) {
-                    ::insnstr((const char*)&c, 1);
+                    ::insnstr((const char*)(&c), 1);
+                    cursor::setCursor(-1,
+                                  cursor::getCursor(cursor::getType::X) + 1);
                 } else {
                     print((char)c);
-                    buffer[tot] = c;
+                    // buffer[tot] = c;
                 }
                 refresh();
                 break;
