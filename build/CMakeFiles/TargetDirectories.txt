@@ -1,3 +1,4 @@
+/root/XML/build/CMakeFiles/rebuild_cache.dir
 /root/XML/build/CMakeFiles/edit_cache.dir
 /root/XML/build/CMakeFiles/xml.dir
-/root/XML/build/CMakeFiles/rebuild_cache.dir
+/root/XML/build/CMakeFiles/editor.dir

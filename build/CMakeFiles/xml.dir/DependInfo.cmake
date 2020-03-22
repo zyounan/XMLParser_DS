@@ -21,6 +21,7 @@ set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "/root/anaconda3/include"
   "../include"
   "/usr/local/include"
+  "../tools/include"
   )
 
 # Targets to which this target links.

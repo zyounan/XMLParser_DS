@@ -1,7 +1,7 @@
 #include "ui.h"
 #include "cxxcurses/cxxcurses.hpp"
-#include "stdc++.h"
 #include "reflect.h"
+#include "stdc++.h"
 
 namespace UI {
 const char *versionInfo = "v0.1", *lastBuild = "2020/03";
@@ -17,6 +17,19 @@ void __alignCenter(int bx, int by, const std::string& str, T&&... args) {
     int len = (int)str.length() >> 1;
     bx = max(0, bx - len);
     // std::cout << bx << " " << by << std::endl;
+    cxxcurses::print(by, bx)(str, std::forward<T>(args)...);
+    cxxcurses::flush();
+}
+template <typename... T>
+void __alignRight(int bx, int by, const std::string& str, T&&... args) {
+    using cxxcurses::cursor;
+    using std::max;
+    size_t nn = str.length();
+    if (bx == -1) bx = cursor::getCursor(cursor::getType::maxX) - nn - 2;
+    // 我们假设屏幕至少有2个像素高
+    if (by == -1) by = 2;
+
+    bx = max(0, bx);
     cxxcurses::print(by, bx)(str, std::forward<T>(args)...);
     cxxcurses::flush();
 }
@@ -48,7 +61,7 @@ void showAbout() {
                   lastBuild);
     __alignCenter(-1, -1, "{cU}", "By : zyounan\n");
     __alignCenter(-1, -1, "type {r} to show help info.\n", ":help");
-    __alignCenter(-1, -1, "type {r} to show about info.\n", ":about");
+    __alignCenter(-1, -1, "type {r} to switch into edit mode.\n", "Ctrl + E");
 }
 void init() {
     using std::cin;
@@ -58,14 +71,62 @@ void init() {
     showAbout();
     initReflect();
 }
+static bool commandInsertMode = false;
+static bool editMode = false;
+const int _bufferSize = 255;
+static int lastX = 0, lastY = 0;
+unsigned int buffer[_bufferSize];
+void printText() {}
+void processEdit(int ch) {
+    using namespace cxxcurses;
+    int mxy = cursor::getCursor(cursor::getType::maxY) - 2,
+        mxx = cursor::getCursor(cursor::getType::maxX) - 10;
+    ::clear();
+    flush();
+    printText();
+    cursor::setCursor(lastY, lastX);
+    switch (ch) {
+        case '\n':
+        case '\r': {
+            int y = cursor::getCursor(cursor::getType::Y);
+            y = std::min(y,mxy);
+            
+            cursor::setCursor(y,-1);
+
+        }
+        case KEY_BACKSPACE:
+        case '\b': {
+        }
+        case KEY_DC: {
+        }
+        case KEY_LEFT: {
+        }
+        case KEY_RIGHT: {
+        }
+        case KEY_UP: {
+        }
+        case KEY_DOWN: {
+        }
+        case KEY_HOME: {
+        }
+        case KEY_END: {
+        }
+        case KEY_EXIT: {
+        }
+        case CTRL('f'): {
+        }
+        case CTRL('b'): {
+        }
+        default:{
+
+        }
+    }
+}
 void loop() {
-    static bool insertMode = false;
-    const int _bufferSize = 255;
     using namespace cxxcurses;
     set_echo(false);
     keypad(stdscr, true);
     cbreak();
-    unsigned int buffer[_bufferSize];
     cursor::set_visibility(cursor::visibility::high);
     int y = cursor::getCursor(cursor::getType::maxY) - 1;
     int tot = 0;
@@ -73,10 +134,19 @@ void loop() {
     refresh();
     while (1) {
         int c = getch();
+        int _debug_NowX = cursor::getCursor(cursor::getType::X),
+            _debug_NowY = cursor::getCursor(cursor::getType::Y);
+        __alignRight(-1, -1, "X:{yB} Y: {yB}", _debug_NowX, _debug_NowY);
+        cursor::setCursor(_debug_NowY, _debug_NowX);
+        if (editMode) {
+            processEdit(c);
+            continue;
+        }
         switch (c) {
             case '\n':
             case '\r': {
-                insertMode = tot = 0;
+                //处理输入的命令
+                commandInsertMode = false, tot = 0;
                 memset(buffer, 0, sizeof buffer);
                 error_check(mvinchnstr(y, 0, (buffer + 1), _bufferSize - 1),
                             "Unexpected char from screen!");
@@ -92,7 +162,7 @@ void loop() {
                     clearToEndOfLine();
                     cursor::set_visibility(cursor::visibility::high);
 
-                    insertMode = false;
+                    commandInsertMode = false;
 
                     if (cc != '\n' && cc != '\r' && cc != '\t') {
                         print(y, 0)(cc);
@@ -124,6 +194,7 @@ void loop() {
             }
             case KEY_BACKSPACE:
             case '\b': {
+                //退格键
                 cursor::setCursor(-1,
                                   cursor::getCursor(cursor::getType::X) - 1);
                 tot = std::max(tot - 1, 0);
@@ -132,49 +203,74 @@ void loop() {
                 break;
             }
             case KEY_DC: {
-                // DELETE
+                // 删除键
                 // cursor::setCursor(-1,
                 //                   cursor::getCursor(cursor::getType::X) + 1);
                 int x = cursor::getCursor(cursor::getType::X);
                 tot = std::max(tot - 1, 0);
                 delch();
                 refresh();
-                if (x + 1 == tot) insertMode = false;
+                if (x + 1 == tot) commandInsertMode = false;
                 break;
             }
             case KEY_LEFT: {
-                insertMode = 1;
+                //向左移动光标
+                commandInsertMode = 1;
                 cursor::set_visibility(cursor::visibility::normal);
                 cursor::setCursor(-1,
                                   cursor::getCursor(cursor::getType::X) - 1);
                 break;
             }
             case KEY_RIGHT: {
-                insertMode = 1;
+                //向右移动光标
+                commandInsertMode = 1;
                 cursor::set_visibility(cursor::visibility::normal);
                 int x = cursor::getCursor(cursor::getType::X) + 1;
                 if (x <= tot) {
                     cursor::setCursor(-1, x);
                 }
-                if (x > tot) insertMode = false;
+                if (x > tot) commandInsertMode = false;
                 break;
             }
             case KEY_HOME: {
-                insertMode = tot;
+                //返回到当前行首
+                commandInsertMode = tot;
                 cursor::setCursor(y, 0);
                 break;
             }
             case KEY_END: {
-                insertMode = false;
+                //返回到当前行尾部
+                commandInsertMode = false;
                 cursor::setCursor(y, tot);
                 break;
             }
+            case CTRL('e'): {
+                //切换到编辑模式
+                editMode = true;
+                cursor::setCursor(y, 0);
+                clearToEndOfLine();
+                cursor::set_visibility(cursor::visibility::normal);
+                commandInsertMode = false, tot = 0;
+                memset(buffer, 0, sizeof buffer);
+                break;
+            }
+            case KEY_EXIT: {
+                //切换到命令模式
+                editMode = false;
+                cursor::setCursor(y, 0);
+                clearToEndOfLine();
+                cursor::set_visibility(cursor::visibility::normal);
+                commandInsertMode = false, tot = 0;
+
+                break;
+            }
             default: {
+                //自由输入字符
                 tot = std::min(tot + 1, _bufferSize);
-                if (insertMode) {
+                if (commandInsertMode) {
                     ::insnstr((const char*)(&c), 1);
-                    cursor::setCursor(-1,
-                                  cursor::getCursor(cursor::getType::X) + 1);
+                    cursor::setCursor(
+                        -1, cursor::getCursor(cursor::getType::X) + 1);
                 } else {
                     print((char)c);
                     // buffer[tot] = c;
