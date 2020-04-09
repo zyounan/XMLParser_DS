@@ -31,11 +31,7 @@ enum class XmlSyntax {
     XmlCDATA,
     XmlUnknown
 };
-enum class XmlParserInfo{
-    Warning,
-    Error,
-    Info
-};
+enum class XmlParserInfo { Warning, Error, Info };
 enum class XmlError {
     XML_SUCCESS = 0,
     XML_NO_ATTRIBUTE,
@@ -146,7 +142,7 @@ class XmlNode {
     using Type_Son = std::vector<XmlNode*>;
 
    private:
-    int depth;
+    int depth = 0;
     XmlNode* fa;
     mutable Type_Son next;
     struct tag {
@@ -157,6 +153,9 @@ class XmlNode {
     XmlSyntax type;
 
    public:
+    ~XmlNode(){
+        for(auto &x : next) delete x;
+    }
     XmlNode() = default;
     void setContent(const std::string& s) { content = s; }
     void setType(XmlSyntax t) { type = t; }
@@ -166,11 +165,14 @@ class XmlNode {
         fa = f;
         depth = f->depth + 1;
     }
+    auto getDepth() { return depth; }
+    tag& getTag() { return Tag; }
+    Type_Son& getNext() { return next; }
     auto getFather() { return fa; }
-    auto getTagKeyValue() { return Tag.key_value; }
-    auto getTagName() { return Tag.tagName; }
+    auto& getTagKeyValue() { return Tag.key_value; }
+    std::string& getTagName() { return Tag.tagName; }
     auto getType() { return type; }
-    auto getContent() { return content; }
+    std::string& getContent() { return content; }
     XmlNode* getLastSonByType(XmlSyntax Type) {
         for (auto& x : reverse(next)) {
             if (x->type == Type) return x;
@@ -203,8 +205,13 @@ class XmlNode {
         res->content = move(Content);
         return res;
     }
+
 };
+
 class XmlPrinter {};
+
+
+
 class XmlDocument {
    private:
     XmlNode* root = nullptr;
@@ -216,6 +223,8 @@ class XmlDocument {
     bool __isIndtd = false;
     int curLine = 1;
     using It = std::string::iterator;
+    std::string __last_info;
+    std::function<void(const std::string&)> _call_print;
     static constexpr const char* xmlRaw[] = {
         "<?", "<!--", "<![CDATA[", "<!", "<",
     };
@@ -231,7 +240,7 @@ class XmlDocument {
     static const int cdataHeaderLen = 9;
     static const int dtdHeaderLen = 2;
     static const int elementHeaderLen = 1;
-    void printInfo(const std::string&,XmlParserInfo,int,int);
+    void printInfo(const std::string&, XmlParserInfo, int, int);
     void printTree(XmlNode*, int);
     void parse(XmlNode*, int, int);
     void __parse(XmlNode*, int, int&, std::string&, It&, It&);
@@ -248,7 +257,11 @@ class XmlDocument {
     XmlDocument() = default;
     void open(const std::string&);
     void save(const std::string& filename);
+    void close();
+    XmlNode* getTreeRoot() { return root; }
     void Parse();
+    std::string getLastInfo();
+    // void setPrintFunc(const std::function<void(const std::string&)>&);
 };
 
 };  // namespace xmlParser

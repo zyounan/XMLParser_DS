@@ -1,5 +1,4 @@
 #include <bits/stdc++.h>
-
 #include <cppurses/cppurses.hpp>
 #include <cppurses/widget/layouts/horizontal.hpp>
 #include <cppurses/widget/layouts/vertical.hpp>
@@ -34,7 +33,6 @@ class Editor : public cppurses::layout::Vertical {
         if (ifs.fail() && !ifs.eof()) return "";
         return oss.str();
     }
-
    public:
     bool is_open_file = false;
     Titlebar& title_bar = this->make_child<Titlebar>("Xml Parser");
@@ -45,7 +43,7 @@ class Editor : public cppurses::layout::Vertical {
     Editor() { this->initialize(); }
     void load_file(const std::string& filename) {
         // Clear current
-
+        
         textbox.set_contents(__load_file(filename));
         size_t pos = filename.find_last_of("/");
         std::string name;

@@ -18,25 +18,5 @@
   "directory": "/root/XML/build",
   "command": "/usr/bin/g++-8   -DDEBUG -I/root/anaconda3/include -I/root/XML/include -I/usr/local/include -I/root/XML/tools/include   -std=c++1z  -O0 -Wall -g2 -ggdb -L/usr/local/lib/   -o CMakeFiles/xml.dir/src/test.cpp.o -c /root/XML/src/test.cpp",
   "file": "/root/XML/src/test.cpp"
-},
-{
-  "directory": "/root/XML/build",
-  "command": "/usr/bin/g++-8   -DDEBUG -I/root/anaconda3/include -I/root/XML/include -I/usr/local/include -I/root/XML/tools/include   -std=c++1z  -O0 -Wall -g2 -ggdb -L/usr/local/lib/   -o CMakeFiles/editor.dir/tools/editor/prompt.cpp.o -c /root/XML/tools/editor/prompt.cpp",
-  "file": "/root/XML/tools/editor/prompt.cpp"
-},
-{
-  "directory": "/root/XML/build",
-  "command": "/usr/bin/g++-8   -DDEBUG -I/root/anaconda3/include -I/root/XML/include -I/usr/local/include -I/root/XML/tools/include   -std=c++1z  -O0 -Wall -g2 -ggdb -L/usr/local/lib/   -o CMakeFiles/editor.dir/tools/editor/page.cpp.o -c /root/XML/tools/editor/page.cpp",
-  "file": "/root/XML/tools/editor/page.cpp"
-},
-{
-  "directory": "/root/XML/build",
-  "command": "/usr/bin/g++-8   -DDEBUG -I/root/anaconda3/include -I/root/XML/include -I/usr/local/include -I/root/XML/tools/include   -std=c++1z  -O0 -Wall -g2 -ggdb -L/usr/local/lib/   -o CMakeFiles/editor.dir/tools/editor/text.cpp.o -c /root/XML/tools/editor/text.cpp",
-  "file": "/root/XML/tools/editor/text.cpp"
-},
-{
-  "directory": "/root/XML/build",
-  "command": "/usr/bin/g++-8   -DDEBUG -I/root/anaconda3/include -I/root/XML/include -I/usr/local/include -I/root/XML/tools/include   -std=c++1z  -O0 -Wall -g2 -ggdb -L/usr/local/lib/   -o CMakeFiles/editor.dir/tools/editor/line.cpp.o -c /root/XML/tools/editor/line.cpp",
-  "file": "/root/XML/tools/editor/line.cpp"
 }
 ]

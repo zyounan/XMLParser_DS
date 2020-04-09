@@ -1,4 +1,7 @@
 <breakfast_menu>
+<![CDATA[
+THIS IS CDATA test
+]]>
     <food>
         <name>
             <name2>

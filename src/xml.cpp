@@ -1,4 +1,5 @@
 #include "xml.h"
+
 #include "stdc++.h"
 namespace xmlParser {
 
@@ -69,8 +70,13 @@ void XmlDocument::printInfo(const std::string& str, XmlParserInfo x, int line,
                             int which) {
     using std::cerr, std::endl;
     static const char* sss[] = {"[Warning]", "[Error]", "[Info]"};
-    cerr << FileName << ":" << line << ":" << which << ": "
-         << sss[static_cast<int>(x)] << " : " << str << std::endl;
+    std::stringstream ss;
+    ss << FileName << ":" << line << ":" << which << ": "
+       << sss[static_cast<int>(x)] << " : " << str << std::endl;
+    __last_info = ss.str();
+}
+std::string XmlDocument::getLastInfo() {
+    return this->__last_info;
 }
 void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                           It& pl, It& pr) {
@@ -386,7 +392,8 @@ void XmlDocument::parse(XmlNode* cur, int depth, int line) {
         __parse(cur, depth, curLine, str, pl, pr);
     } catch (const ifstream::failure& e) {
         // cout << "做完了" << endl;
-        printTree(root, 0);
+        return;
+        // printTree(root, 0);
     }
 }
 void XmlDocument::__clearState() {
@@ -411,5 +418,8 @@ void XmlDocument::open(const std::string& filename) {
     __clearState();
     FileName = filename;
     __setOpenstate();
+}
+void XmlDocument::close() {
+    __clearState();
 }
 };  // namespace xmlParser

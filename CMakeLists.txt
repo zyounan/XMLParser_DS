@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(myXmlParser)
 
 aux_source_directory(src DIR_SRCS) 
-aux_source_directory(tools/editor DIR_EDITOR_SRCS) 
+# aux_source_directory(tools/editor DIR_EDITOR_SRCS) 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z")
 set(CMAKE_CXX_COMPILER "/usr/bin/g++-8")
@@ -22,9 +22,9 @@ include_directories("${PROJECT_SOURCE_DIR}/include" "/usr/local/include/")
 include_directories("${PROJECT_SOURCE_DIR}/tools/include")
 
 link_directories("/usr/local/lib/")
-add_executable(xml  ${DIR_SRCS})
-target_link_libraries(xml ${CURSES_LIBRARIES})
+add_executable(xml ${DIR_SRCS})
+target_link_libraries(xml cppurses ${CURSES_LIBRARIES} pthread)
 
-add_executable(editor ${DIR_EDITOR_SRCS})
-target_link_libraries(editor ${CURSES_LIBRARIES})
+# add_executable(editor ${DIR_EDITOR_SRCS})
+# target_link_libraries(editor ${CURSES_LIBRARIES})
 

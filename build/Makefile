@@ -59,17 +59,6 @@ CMAKE_BINARY_DIR = /root/XML/build
 #=============================================================================
 # Targets provided globally by CMake.
 
-# Special rule for the target rebuild_cache
-rebuild_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/usr/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : rebuild_cache
-
-# Special rule for the target rebuild_cache
-rebuild_cache/fast: rebuild_cache
-
-.PHONY : rebuild_cache/fast
-
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
@@ -80,6 +69,17 @@ edit_cache:
 edit_cache/fast: edit_cache
 
 .PHONY : edit_cache/fast
+
+# Special rule for the target rebuild_cache
+rebuild_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
+	/usr/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : rebuild_cache
+
+# Special rule for the target rebuild_cache
+rebuild_cache/fast: rebuild_cache
+
+.PHONY : rebuild_cache/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -125,19 +125,6 @@ xml: cmake_check_build_system
 xml/fast:
 	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/build
 .PHONY : xml/fast
-
-#=============================================================================
-# Target rules for targets named editor
-
-# Build rule for target.
-editor: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 editor
-.PHONY : editor
-
-# fast build rule for target.
-editor/fast:
-	$(MAKE) -f CMakeFiles/editor.dir/build.make CMakeFiles/editor.dir/build
-.PHONY : editor/fast
 
 src/reflectWork.o: src/reflectWork.cpp.o
 
@@ -247,124 +234,15 @@ src/xml.cpp.s:
 	$(MAKE) -f CMakeFiles/xml.dir/build.make CMakeFiles/xml.dir/src/xml.cpp.s
 .PHONY : src/xml.cpp.s
 
-tools/editor/line.o: tools/editor/line.cpp.o
-
-.PHONY : tools/editor/line.o
-
-# target to build an object file
-tools/editor/line.cpp.o:
-	$(MAKE) -f CMakeFiles/editor.dir/build.make CMakeFiles/editor.dir/tools/editor/line.cpp.o
-.PHONY : tools/editor/line.cpp.o
-
-tools/editor/line.i: tools/editor/line.cpp.i
-
-.PHONY : tools/editor/line.i
-
-# target to preprocess a source file
-tools/editor/line.cpp.i:
-	$(MAKE) -f CMakeFiles/editor.dir/build.make CMakeFiles/editor.dir/tools/editor/line.cpp.i
-.PHONY : tools/editor/line.cpp.i
-
-tools/editor/line.s: tools/editor/line.cpp.s
-
-.PHONY : tools/editor/line.s
-
-# target to generate assembly for a file
-tools/editor/line.cpp.s:
-	$(MAKE) -f CMakeFiles/editor.dir/build.make CMakeFiles/editor.dir/tools/editor/line.cpp.s
-.PHONY : tools/editor/line.cpp.s
-
-tools/editor/page.o: tools/editor/page.cpp.o
-
-.PHONY : tools/editor/page.o
-
-# target to build an object file
-tools/editor/page.cpp.o:
-	$(MAKE) -f CMakeFiles/editor.dir/build.make CMakeFiles/editor.dir/tools/editor/page.cpp.o
-.PHONY : tools/editor/page.cpp.o
-
-tools/editor/page.i: tools/editor/page.cpp.i
-
-.PHONY : tools/editor/page.i
-
-# target to preprocess a source file
-tools/editor/page.cpp.i:
-	$(MAKE) -f CMakeFiles/editor.dir/build.make CMakeFiles/editor.dir/tools/editor/page.cpp.i
-.PHONY : tools/editor/page.cpp.i
-
-tools/editor/page.s: tools/editor/page.cpp.s
-
-.PHONY : tools/editor/page.s
-
-# target to generate assembly for a file
-tools/editor/page.cpp.s:
-	$(MAKE) -f CMakeFiles/editor.dir/build.make CMakeFiles/editor.dir/tools/editor/page.cpp.s
-.PHONY : tools/editor/page.cpp.s
-
-tools/editor/prompt.o: tools/editor/prompt.cpp.o
-
-.PHONY : tools/editor/prompt.o
-
-# target to build an object file
-tools/editor/prompt.cpp.o:
-	$(MAKE) -f CMakeFiles/editor.dir/build.make CMakeFiles/editor.dir/tools/editor/prompt.cpp.o
-.PHONY : tools/editor/prompt.cpp.o
-
-tools/editor/prompt.i: tools/editor/prompt.cpp.i
-
-.PHONY : tools/editor/prompt.i
-
-# target to preprocess a source file
-tools/editor/prompt.cpp.i:
-	$(MAKE) -f CMakeFiles/editor.dir/build.make CMakeFiles/editor.dir/tools/editor/prompt.cpp.i
-.PHONY : tools/editor/prompt.cpp.i
-
-tools/editor/prompt.s: tools/editor/prompt.cpp.s
-
-.PHONY : tools/editor/prompt.s
-
-# target to generate assembly for a file
-tools/editor/prompt.cpp.s:
-	$(MAKE) -f CMakeFiles/editor.dir/build.make CMakeFiles/editor.dir/tools/editor/prompt.cpp.s
-.PHONY : tools/editor/prompt.cpp.s
-
-tools/editor/text.o: tools/editor/text.cpp.o
-
-.PHONY : tools/editor/text.o
-
-# target to build an object file
-tools/editor/text.cpp.o:
-	$(MAKE) -f CMakeFiles/editor.dir/build.make CMakeFiles/editor.dir/tools/editor/text.cpp.o
-.PHONY : tools/editor/text.cpp.o
-
-tools/editor/text.i: tools/editor/text.cpp.i
-
-.PHONY : tools/editor/text.i
-
-# target to preprocess a source file
-tools/editor/text.cpp.i:
-	$(MAKE) -f CMakeFiles/editor.dir/build.make CMakeFiles/editor.dir/tools/editor/text.cpp.i
-.PHONY : tools/editor/text.cpp.i
-
-tools/editor/text.s: tools/editor/text.cpp.s
-
-.PHONY : tools/editor/text.s
-
-# target to generate assembly for a file
-tools/editor/text.cpp.s:
-	$(MAKE) -f CMakeFiles/editor.dir/build.make CMakeFiles/editor.dir/tools/editor/text.cpp.s
-.PHONY : tools/editor/text.cpp.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
-	@echo "... rebuild_cache"
 	@echo "... edit_cache"
 	@echo "... xml"
-	@echo "... editor"
+	@echo "... rebuild_cache"
 	@echo "... src/reflectWork.o"
 	@echo "... src/reflectWork.i"
 	@echo "... src/reflectWork.s"
@@ -377,18 +255,6 @@ help:
 	@echo "... src/xml.o"
 	@echo "... src/xml.i"
 	@echo "... src/xml.s"
-	@echo "... tools/editor/line.o"
-	@echo "... tools/editor/line.i"
-	@echo "... tools/editor/line.s"
-	@echo "... tools/editor/page.o"
-	@echo "... tools/editor/page.i"
-	@echo "... tools/editor/page.s"
-	@echo "... tools/editor/prompt.o"
-	@echo "... tools/editor/prompt.i"
-	@echo "... tools/editor/prompt.s"
-	@echo "... tools/editor/text.o"
-	@echo "... tools/editor/text.i"
-	@echo "... tools/editor/text.s"
 .PHONY : help
 
 
