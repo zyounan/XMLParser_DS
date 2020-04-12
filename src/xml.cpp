@@ -96,11 +96,15 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
             XmlUtil::skipWhiteSpace(pl, pr, line);
             auto pos = str.find("-->", pl - str.begin());
             auto nxt = cur->getLastSonByType(XmlSyntax::XmlComment);
+
+
             if (!nxt) {
                 printInfo("comment format is not valid.", XmlParserInfo::Error,
                           line, static_cast<int>(pl - str.begin() + 1));
                 throw XmlException(XmlError::XML_ERROR_PARSING_COMMENT);
             }
+
+
             content.clear();
             if (pos == string::npos) {
                 __isInComment = true;
@@ -114,6 +118,10 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                     pl - str.begin())  //某一行单独以 --> 结尾
                     content = string(pl, str.begin() + pos);
                 pl = str.begin() + pos + commentHeaderLen - 1;
+
+                nxt->setEndPos(pos);
+                nxt->setEndLine(line);
+
                 nxt->content += content;
             }
         } else if (__isInCDATA) {
@@ -137,6 +145,10 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                 if (static_cast<int>(pos - 1) >
                     pl - str.begin())  // 某一行单独以 ]]> 结尾
                     content = string(pl, str.begin() + pos);
+                
+                nxt->setEndLine(line);
+                nxt->setEndPos(pos);
+                
                 pl = str.begin() + pos + 3;
                 nxt->content += content;
             }
@@ -162,8 +174,13 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                 if (static_cast<int>(pos - 1) >
                     pl - str.begin())  // 某一行单独以 ]> 结尾
                     content = string(pl, str.begin() + pos);
+                
+                nxt->setEndLine(line);
+                nxt->setEndPos(pos);
+                
                 pl = str.begin() + pos + 2;
                 nxt->content += content;
+                
             }
         }
         auto res = identify(pl, pr, line);
@@ -174,6 +191,10 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
             } break;
             case 0: {
                 content.clear();
+
+                if(!cur->getBeginLine())    cur->setBeginLine(line);
+                if(cur->getBeginPos() != XmlNode::npos) cur->setBeginPos(pl - str.begin());
+
                 while (*pl != '<' && pl != pr) {
                     content += *pl++;
                 }
@@ -183,6 +204,10 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                               line, static_cast<int>(pl - str.begin() + 1));
                     throw XmlException(XmlError::XML_ERROR_PARSING_ATTRIBUTE);
                 }
+
+                cur->setEndLine(line);
+                cur->setEndPos(pl - str.begin());
+
                 cur->content += content;
             } break;
             case 1: {
@@ -193,6 +218,9 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                               static_cast<int>(pl - str.begin() + 1));
                     throw XmlException(XmlError::XML_NO_TEXT_NODE);
                 }
+                root->setBeginLine(line);
+                root->setBeginPos(pl - str.begin());
+
                 pl += 2;  //跳过"<?"
                 while (!XmlUtil::isWhite(*pl) && XmlUtil::isNameChar(*pl)) {
                     content += *(pl++);
@@ -200,7 +228,12 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                 root->Tag.tagName = content;
                 content.clear();
                 __parseKeyValue(str, cur, pl, pr);
+
+                root->setEndLine(line);
+                root->setEndPos(pl - str.begin());
+
                 pl += 2;  //跳过?>
+
                 if (str.rfind("?>") == string::npos) {
                     printInfo("Broken header.", XmlParserInfo::Error, line,
                               static_cast<int>(pl - str.begin() + 1));
@@ -209,7 +242,15 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
             } break;
             case 2: {
                 //注释
+                XmlNode* node = new XmlNode;
+                cur->addNode(node);
+                node->type = XmlSyntax::XmlComment;
+
                 content.clear();
+
+                node->setBeginLine(line);
+                node->setBeginPos(pl - str.begin());
+
                 pl += commentHeaderLen;
                 auto pos = str.find("-->", pl - str.begin());
                 if (pos == string::npos) {
@@ -219,15 +260,23 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                 } else {
                     content = string(pl, str.begin() + pos);
                     pl = str.begin() + pos + commentHeaderLen - 1;
+
+                    node->setEndLine(line);
+                    node->setEndPos(pos);
                 }
-                XmlNode* node = new XmlNode;
-                cur->addNode(node);
-                node->type = XmlSyntax::XmlComment;
                 node->content = content;
+
             } break;
             case 3: {
                 // CDATA
                 content.clear();
+                XmlNode* node = new XmlNode;
+                cur->addNode(node);
+                node->type = XmlSyntax::XmlUnknown;
+                
+                node->setBeginLine(line);
+                node->setBeginPos(pl - str.begin());
+
                 pl += cdataHeaderLen;
                 auto pos = str.find("]>", pl - str.begin());
                 if (pos == string::npos) {
@@ -235,12 +284,13 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                     content = string(pl, str.end());
                     __nextLine(str, pl, pr, line);
                 } else {
+
+                    node->setEndLine(line);
+                    node->setEndPos(pos);
+
                     content = string(pl, str.begin() + pos - 1);
                     pl = str.begin() + pos + 2;  //跳过尾部
                 }
-                XmlNode* node = new XmlNode;
-                cur->addNode(node);
-                node->type = XmlSyntax::XmlUnknown;
                 node->content = content;
             } break;
             case 4: {
@@ -251,7 +301,15 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                     "ignored.",
                     XmlParserInfo::Warning, line,
                     static_cast<int>(pl - str.begin()));
+                
+                XmlNode* node = new XmlNode;
+                cur->addNode(node);
+                node->type = XmlSyntax::XmlUnknown;
+
                 content.clear();
+                node->setBeginLine(line);
+                node->setBeginPos(pl - str.begin());
+
                 pl += cdataHeaderLen;
                 auto pos = str.find("]]>", pl - str.begin());
                 if (pos == string::npos) {
@@ -259,12 +317,12 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                     content = string(pl, str.end());
                     __nextLine(str, pl, pr, line);
                 } else {
+                    node->setEndLine(line);
+                    node->setEndPos(pos);
                     content = string(pl, str.begin() + pos - 1);
                     pl = str.begin() + pos + 3;  //跳过尾部
                 }
-                XmlNode* node = new XmlNode;
-                cur->addNode(node);
-                node->type = XmlSyntax::XmlUnknown;
+                
                 node->content = content;
             } break;
             case 5: {
@@ -276,9 +334,17 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                     //不是标签结尾
                     node = new XmlNode;
                     cur->addNode(node);
+
+                    node->setBeginLine(line);
+                    node->setBeginPos(pl - 1 - str.begin());
+
                     isTagEnd = 0;
-                } else
+                } else{
                     ++pl;  //跳过'/'
+                    cur->setEndLine(line);
+                    cur->setBeginPos(pl - 2 - str.begin());
+
+                }
                 // auto pos = str.find('>', pl - str.begin());
                 if (XmlUtil::isNameStartChar(*pl)) {
                     content.clear();
@@ -306,6 +372,10 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                             //该标签为空标签
                             ++pl;
                             node->type = XmlSyntax::XmlEmptylabel;
+                            
+                            node->setEndLine(line);
+                            node->setEndPos(pl - str.begin());
+
                         }
                         if (*pl != '>' && !XmlUtil::isNameChar(*pl)) {
                             printInfo("Broken header.", XmlParserInfo::Error,

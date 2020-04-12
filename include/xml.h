@@ -149,14 +149,30 @@ class XmlNode {
         std::string tagName;
         Type_KeyValue key_value;
     } Tag;
+    //用来记录每个节点原本的位置
+    const static size_t npos = UINT_MAX;
+
+    size_t begin_line,end_line = UINT_MAX;
+    size_t begin_pos, end_pos = UINT_MAX;
     std::string content;
     XmlSyntax type;
 
    public:
-    ~XmlNode(){
-        for(auto &x : next) delete x;
+    ~XmlNode() {
+        for (auto& x : next) delete x;
     }
     XmlNode() = default;
+
+    void setEndLine(size_t x) { end_line = x; }
+    void setBeginLine(size_t x) { begin_line = x; }
+    void setBeginPos(size_t x) { begin_pos = x; }
+    void setEndPos(size_t x) { end_pos = x; }
+
+    size_t getEndLine() { return end_line; }
+    size_t getBeginLine() { return begin_line; }
+    size_t getBeginPos() { return begin_pos; }
+    size_t getEndPos() { return end_pos; }
+
     void setContent(const std::string& s) { content = s; }
     void setType(XmlSyntax t) { type = t; }
     void setTagName(const std::string& s) { Tag.tagName = s; }
@@ -205,12 +221,9 @@ class XmlNode {
         res->content = move(Content);
         return res;
     }
-
 };
 
 class XmlPrinter {};
-
-
 
 class XmlDocument {
    private:
