@@ -296,6 +296,14 @@ class Editor : public cppurses::layout::Vertical {
             string content;
             content.reserve(128);
 
+            auto pos = tmp.find_last_of('<');
+
+            if (pos != string::npos) {
+                res.clear();
+                for(int i = 0;i <= (int)pos;++i)    res.append(line[i]);                
+                pl = tmp.begin() + pos + 1;
+            }
+
             while (pl != pr && XmlUtil::isWhite(*pl)) {
                 res.append(std::string{*pl}, detail::ForegroundColor::White);
                 ++pl;
@@ -329,13 +337,18 @@ class Editor : public cppurses::layout::Vertical {
                         __parse_key_value(res, pl, pr);
                     }
                     string content;
-                    //>前面不用管 已经解析过了
-                    auto pos = tmp.find(">");
+                    //除最后一个标签的前面所有不用管 已经解析过了
+                    // auto pos2 = tmp.find_last_of("<");
+                    // auto pos = tmp.find_last_of(">",pos2);
+                    //
 
-                    if (pos != string::npos){
-                        for (int i = 0; i <= (int)pos; ++i) res.append(line[i]);
-                        pl = tmp.begin() + pos + 1;
-                    }
+                    res.clear();
+                    auto tt = pl - tmp.begin();
+                    for (int i = 0; i < (int)tt; ++i) res.append(line[i]);
+
+                    // if (pos != string::npos){
+                    //     // pl = tmp.begin() + pos + 1;
+                    // }
 
                     while (pl != pr && *pl != '<') {
                         content += *pl++;
@@ -465,7 +478,6 @@ class Editor : public cppurses::layout::Vertical {
                                 text.begin() + pos + textbox.row_length(line)};
 
             // std::cerr << tmp.str() << std::endl;
-
 
             Glyph_string res = __parse_line(tmp);
 
