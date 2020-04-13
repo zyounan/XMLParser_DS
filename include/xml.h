@@ -115,6 +115,11 @@ class XmlUtil {
             ++begin;
         }
     }
+    static void skipWhiteSpace(std::string::iterator& begin,
+                               std::string::iterator& end) {
+        int line = 0;
+        skipWhiteSpace(begin, end, line);
+    }
     static void skipchar(std::string::iterator& begin,
                          std::string::iterator& end, char c) {
         while (begin != end && *(begin) == c) ++begin;
@@ -152,7 +157,7 @@ class XmlNode {
     //用来记录每个节点原本的位置
     const static size_t npos = UINT_MAX;
 
-    size_t begin_line,end_line = UINT_MAX;
+    size_t begin_line, end_line = UINT_MAX;
     size_t begin_pos, end_pos = UINT_MAX;
     std::string content;
     XmlSyntax type;
@@ -231,7 +236,7 @@ class XmlDocument {
     std::string FileName;
     std::ifstream in;
     std::ofstream out;
-    
+
     bool __isInComment = false;
     bool __isInCDATA = false;
     bool __isIndtd = false;
@@ -241,21 +246,9 @@ class XmlDocument {
     using It = std::string::iterator;
     std::string __last_info;
     std::function<void(const std::string&)> _call_print;
-    static constexpr const char* xmlRaw[] = {
-        "<?", "<!--", "<![CDATA[", "<!", "<",
-    };
-    static constexpr const int xmlRawLen[] = {2, 4, 9, 2, 1};
-    static constexpr const char* xmlHeader = {"<?"};           // 1
-    static constexpr const char* commentHeader = {"<!--"};     // 2
-    static constexpr const char* cdataHeader = {"<![CDATA["};  // 3
-    static constexpr const char* dtdHeader = {"<!"};           // 4
-    static constexpr const char* elementHeader = {"<"};        // 5
+
     static const int maxDepth = 20;
-    static const int xmlHeaderLen = 2;
-    static const int commentHeaderLen = 4;
-    static const int cdataHeaderLen = 9;
-    static const int dtdHeaderLen = 2;
-    static const int elementHeaderLen = 1;
+
     void printInfo(const std::string&, XmlParserInfo, int, int);
     void printTree(XmlNode*, int);
     void parse(XmlNode*, int, int);
@@ -268,8 +261,24 @@ class XmlDocument {
     int identify(std::string::iterator&, std::string::iterator&, int&);
 
    public:
+    static constexpr const char* xmlRaw[] = {
+        "<?", "<!--", "<![CDATA[", "<!", "<",
+    };
+
+    static constexpr const int xmlRawLen[] = {2, 4, 9, 2, 1};
+    static constexpr const char* xmlHeader = {"<?"};           // 1
+    static constexpr const char* commentHeader = {"<!--"};     // 2
+    static constexpr const char* cdataHeader = {"<![CDATA["};  // 3
+    static constexpr const char* dtdHeader = {"<!"};           // 4
+    static constexpr const char* elementHeader = {"<"};        // 5
+    static const int xmlHeaderLen = 2;
+    static const int commentHeaderLen = 4;
+    static const int cdataHeaderLen = 9;
+    static const int dtdHeaderLen = 2;
+    static const int elementHeaderLen = 1;
+
     static int Identify(std::string::iterator&, std::string::iterator&);
-    static void parseKeyValue(std::string&, It&, It&,XmlNode&);
+    static void parseKeyValue(std::string&, It&, It&, XmlNode&);
 
     XmlDocument(const std::string&);
     // XmlDocument(const std::string& filecontent);

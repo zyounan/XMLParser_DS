@@ -46,6 +46,14 @@ class Editor : public cppurses::layout::Vertical {
     Glyph_string glyph;
     opt::Optional<cppurses::Color> cur_color;
 
+    struct __parse_helper {
+        bool isInComment = false;      // 注释 蓝色
+        bool isInCDATA = false;        // CDATA 棕色
+        bool isIndtd = false;          // dtd 蓝色
+        bool isInLabel = false;        // label 红色
+        bool isStillKeyValue = false;  // key value 换行
+    } parse_flag;
+
     void __print_xml(xmlParser::XmlNode* root, int d) {
         static auto __printTab = [this](int y) {
             std::stringstream tmp;
@@ -158,8 +166,10 @@ class Editor : public cppurses::layout::Vertical {
             file.Parse();
             // cur_color = textbox.brush.foreground_color();
             __print_xml(file.getTreeRoot(), 0);
+
             std::string info = file.getLastInfo();
             if (info.size()) __on_err_func(file.getLastInfo());
+
         } catch (const XmlException& e) {
             std::string info = file.getLastInfo();
             if (info.size()) __on_err_func(file.getLastInfo());
@@ -174,6 +184,193 @@ class Editor : public cppurses::layout::Vertical {
             textbox.set_contents(oss.str());
         }
     }
+    void __parse_key_value(Glyph_string& res, std::string::iterator& pl,
+                           std::string::iterator& pr) {
+        using namespace std;
+        using namespace xmlParser;
+        string content;
+        while (pl != pr && *pl != '>') {
+            content.clear();
+            // key
+            // XmlUtil::skipWhiteSpace(pl, pr);
+            while (pl != pr && XmlUtil::isWhite(*pl)) {
+                res.append(std::string{*pl}, detail::ForegroundColor::White);
+                ++pl;
+            }
+            while (pl != pr && *pl != '=' && *pl != '>' && *pl != '\'' &&
+                   *pl != '\"') {
+                content += *(pl++);
+            }
+            res.append(content, detail::ForegroundColor::Green);
+            if (pl == pr) break;
+
+            while (pl != pr && XmlUtil::isWhite(*pl)) {
+                res.append(std::string{*pl}, detail::ForegroundColor::White);
+                ++pl;
+            }
+
+            if (*pl == '=') {
+                res.append("=", detail::ForegroundColor::White);
+                ++pl;
+                parse_flag.isStillKeyValue = true;
+            }
+
+            while (pl != pr && XmlUtil::isWhite(*pl)) {
+                res.append(std::string{*pl}, detail::ForegroundColor::White);
+                ++pl;
+            }
+
+            content.clear();
+            // value
+            char mark = ' ';
+
+            if (pl != pr && *pl == '\'') {
+                mark = '\'';
+                res.append("\'", detail::ForegroundColor::Yellow);
+                ++pl;
+            } else if (pl != pr && *pl == '\"') {
+                mark = '\"';
+                res.append("\"", detail::ForegroundColor::Yellow);
+                ++pl;
+            }
+            while (pl != pr && *pl != '>' && *pl != mark) {
+                content += *(pl++);
+            }
+            res.append(content, detail::ForegroundColor::Yellow);
+            if (pl != pr && *pl != '>') {
+                ++pl;
+                res.append(string{mark}, detail::ForegroundColor::Yellow);
+            }
+        }
+        // xml
+
+        if (pl != pr && *pl == '>') {
+            res.append(">", detail::ForegroundColor::Red);
+            ++pl;
+            parse_flag.isInLabel = false;
+            parse_flag.isStillKeyValue = false;
+        }
+    }
+    Glyph_string __parse_line(const cppurses::Glyph_string& line) {
+        using namespace xmlParser;
+        using namespace std;
+
+        string tmp = line.str();
+
+        Glyph_string res;
+        auto pl = tmp.begin(), pr = tmp.end();
+        if (parse_flag.isInComment) {
+            auto pos = tmp.find("-->");
+            if (pos != string::npos) {
+                parse_flag.isInComment = false;
+                res.append(tmp.substr(0, pos + 3),
+                           detail::ForegroundColor::Blue);
+                pl = (tmp.begin() + pos + 3);
+            } else {
+                //整行都是注释
+                return {tmp, detail::ForegroundColor::Blue};
+            }
+        } else if (parse_flag.isInCDATA) {
+            auto pos = tmp.find("]]>");
+            if (pos != string::npos) {
+                parse_flag.isInCDATA = false;
+                res.append(tmp.substr(0, pos + 3),
+                           detail::ForegroundColor::Brown);
+                pl = (tmp.begin() + pos + 3);
+            } else {
+                //整行都是
+                return {tmp, detail::ForegroundColor::Brown};
+            }
+        } else if (parse_flag.isIndtd) {
+            auto pos = tmp.find("]>");
+            if (pos != string::npos) {
+                parse_flag.isIndtd = false;
+                res.append(tmp.substr(0, pos + 2),
+                           detail::ForegroundColor::Blue);
+                pl = (tmp.begin() + pos + 2);
+            } else {
+                //整行都是
+                return {tmp, detail::ForegroundColor::Blue};
+            }
+        } else if (parse_flag.isInLabel) {
+            string content;
+            content.reserve(128);
+
+            while (pl != pr && XmlUtil::isWhite(*pl)) {
+                res.append(std::string{*pl}, detail::ForegroundColor::White);
+                ++pl;
+            }
+            content.clear();
+            while (pl != pr && !XmlUtil::isWhite(*pl) && *pl != '>') {
+                if (*pl == '\'' || *pl == '\"') break;
+                content += *(pl++);
+            }
+            res.append(content, detail::ForegroundColor::Red);
+            __parse_key_value(res, pl, pr);
+        }
+
+        while (pl != pr) {
+            //空白跳过
+
+            while (pl != pr && XmlUtil::isWhite(*pl)) {
+                res.append(std::string{*pl}, detail::ForegroundColor::White);
+                ++pl;
+            }
+
+            int mark = XmlDocument::Identify(pl, pr);
+            switch (mark) {
+                case -1: {
+                    //空行
+                    return tmp;
+                } break;
+                case 0: {
+                    //普通的内容
+                    if (parse_flag.isStillKeyValue) {
+                        __parse_key_value(res, pl, pr);
+                    }
+                    string content;
+                    //>前面不用管 已经解析过了
+                    auto pos = tmp.find(">");
+
+                    if (pos != string::npos){
+                        for (int i = 0; i <= (int)pos; ++i) res.append(line[i]);
+                        pl = tmp.begin() + pos + 1;
+                    }
+
+                    while (pl != pr && *pl != '<') {
+                        content += *pl++;
+                    }
+                    res.append(content, detail::ForegroundColor::White);
+                    break;
+                }
+                case 1:
+                case 5: {
+                    // 标签 红色
+                    // 键: 绿色；等号：白色；值：黄色
+                    string content;
+                    assert(*pl == '<');
+                    parse_flag.isInLabel = true;
+
+                    res.append("<", detail::ForegroundColor::Red);
+                    ++pl;
+                    content.reserve(128);
+                    while (pl != pr && !XmlUtil::isWhite(*pl) && *pl != '>') {
+                        content += *(pl++);
+                    }
+                    res.append(content, detail::ForegroundColor::Red);
+
+                    __parse_key_value(res, pl, pr);
+
+                } break;
+                case 2:
+                case 3:
+                case 4: {
+                }
+
+            }  // end switch
+        }
+        return res;
+    }
 
    public:
     bool is_open_file = false;
@@ -183,15 +380,21 @@ class Editor : public cppurses::layout::Vertical {
         Textbox>();  //如果这个地方放一个layout，layout中只有一个widget会占很大的地方
 
     Editor() { this->initialize(); }
+
     void load_file(const std::string& filename) {
         // Clear current
         textbox.clear();
-        // textbox.brush.set_foreground(Color::Red);
 
+        textbox.contents_modified.disable();
+        // textbox.brush.set_foreground(Color::Red);
         __load_file(filename);
+
         // textbox.set_contents(__load_file(filename));
         size_t pos = filename.find_last_of("/");
         std::string name;
+
+        textbox.contents_modified.enable();
+
         if (pos != std::string::npos) {
             name = filename.substr(pos + 1);
         } else
@@ -200,11 +403,17 @@ class Editor : public cppurses::layout::Vertical {
 
         is_open_file = true;
     }
+
     void close_file() {
         if (!is_open_file) return;
         is_open_file = false;
+        textbox.contents_modified.disable();
+
         textbox.clear();
         textbox.brush.set_background(Color::Black);
+
+        textbox.contents_modified.enable();
+
         System::send_event(Paint_event(textbox));
         this->title_bar.title.set_contents("Xml Parser");
 
@@ -247,6 +456,37 @@ class Editor : public cppurses::layout::Vertical {
                              detail::ForegroundColor::Red) +
                 Glyph_string(" for help.", Attribute::Bold);
 
+        // 实时高亮
+        textbox.contents_modified.connect([&, this](const Glyph_string& text) {
+            int line = textbox.cursor.y();
+            size_t pos = textbox.index_at({(size_t)0, (size_t)line});
+
+            Glyph_string tmp = {text.begin() + pos,
+                                text.begin() + pos + textbox.row_length(line)};
+
+            // std::cerr << tmp.str() << std::endl;
+
+
+            Glyph_string res = __parse_line(tmp);
+
+            textbox.contents_modified.disable();
+            textbox.erase(pos, textbox.row_length(line));
+            textbox.insert(res, pos);
+            textbox.contents_modified.enable();
+        });
+
+        textbox.key_pressed.connect([&](Key::Code code) {
+            switch (code) {
+                case Key::Code::Tab:
+                    textbox.insert(Glyph_string("    "),
+                                   textbox.index_at(textbox.cursor.position()));
+                    break;
+                default:
+                    break;
+            }
+            return;
+        });
+
         textbox.border.enable();
 
         textbox.border.segments.north.disable();
@@ -285,7 +525,7 @@ int main(int argc, char* argv[]) {
     }
 #endif
 #ifdef DEBUG
-    editor.load_file("./test/datain3.xml");
+    // editor.load_file("./test/datain3.xml");
 #endif
     return sys.run(editor);
 }

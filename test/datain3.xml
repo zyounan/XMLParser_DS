@@ -1,7 +1,15 @@
 <?xml version="114.514" standalone="no" ?>
 <ToDo>
+    <![CDATA[
 
-    <Item priority="2" distance="close">Go to the
+    ]]>
+    
+    <Item priority="2" 
+    
+    distance=
+    
+    "233"
+    >Go to the
         <bold>Toy store!
         </bold>
     </Item>

@@ -22,12 +22,12 @@ int XmlDocument::Identify(std::string::iterator& pl,
     int lineNum = 0;
     // std::string tmp = {l,r};
     // auto pl = tmp.begin(),pr = tmp.end();
-    XmlUtil::skipWhiteSpace(pl, pr, lineNum);
+    // XmlUtil::skipWhiteSpace(pl, pr, lineNum);
     if (pl == pr) {
         return -1;
     }
     for (int i = 1; i <= 5; ++i) {
-        if (pr - pl > xmlRawLen[i - 1] &&
+        if (pr - pl >= xmlRawLen[i - 1] &&
             XmlUtil::iterEqual(pl, pl + xmlRawLen[i - 1], xmlRaw[i - 1]))
             return i;
     }
