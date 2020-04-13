@@ -17,12 +17,32 @@ int XmlDocument::identify(std::string::iterator& pl, std::string::iterator& pr,
     }
     return 0;  // nothing
 }
+int XmlDocument::Identify(std::string::iterator& pl,
+                          std::string::iterator& pr) {
+    int lineNum = 0;
+    // std::string tmp = {l,r};
+    // auto pl = tmp.begin(),pr = tmp.end();
+    XmlUtil::skipWhiteSpace(pl, pr, lineNum);
+    if (pl == pr) {
+        return -1;
+    }
+    for (int i = 1; i <= 5; ++i) {
+        if (pr - pl > xmlRawLen[i - 1] &&
+            XmlUtil::iterEqual(pl, pl + xmlRawLen[i - 1], xmlRaw[i - 1]))
+            return i;
+    }
+    return 0;  // nothing
+}
+void XmlDocument::parseKeyValue(std::string& str, It& pl, It& pr,
+                                XmlNode& result) {
+    __parseKeyValue(str, &result, pl, pr);
+}
 void XmlDocument::__parseKeyValue(std::string& str, XmlNode* cur, It& pl,
                                   It& pr) {
     using namespace std;
     int line = 0;
     while (pl != pr && *pl != '>') {
-        string key, value;
+        string key, value = "__this_is_empty_mark__";
         XmlUtil::skipWhiteSpace(pl, pr, line);
         if (*pl == '>' || *pl == '?') break;
         auto pos = str.find('=', pl - str.begin());
@@ -33,6 +53,7 @@ void XmlDocument::__parseKeyValue(std::string& str, XmlNode* cur, It& pl,
         // 跳过'='
         pl = str.begin() + pos + 1;
         char nxt = ' ';
+
         // 是否有引号括起来
         if (*pl == '\'')
             XmlUtil::skipchar(pl, pr, '\''), nxt = '\'';
@@ -44,15 +65,18 @@ void XmlDocument::__parseKeyValue(std::string& str, XmlNode* cur, It& pl,
                 //引号不匹配
                 throw XmlException(XmlError::XML_ERROR_MISMATCHED_ELEMENT);
             }
+            value.clear();
             value = std::string(pl, str.begin() + pos);
             pl = str.begin() + pos + 1;  //移动到引号之后
-        } else {
+        } else if (pl != pr) {
+            value.clear();
             value.reserve(128);
             while (!XmlUtil::isWhite(*pl)) {
                 value += *(pl++);
             }
             value.shrink_to_fit();
         }
+
         cur->Tag.key_value.insert(make_pair(key, value));
         if (pl == pr || *pl == '>' || *pl == '?') break;
     }
@@ -75,9 +99,7 @@ void XmlDocument::printInfo(const std::string& str, XmlParserInfo x, int line,
        << sss[static_cast<int>(x)] << " : " << str << std::endl;
     __last_info = ss.str();
 }
-std::string XmlDocument::getLastInfo() {
-    return this->__last_info;
-}
+std::string XmlDocument::getLastInfo() { return this->__last_info; }
 void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                           It& pl, It& pr) {
     using namespace std;
@@ -97,13 +119,11 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
             auto pos = str.find("-->", pl - str.begin());
             auto nxt = cur->getLastSonByType(XmlSyntax::XmlComment);
 
-
             if (!nxt) {
                 printInfo("comment format is not valid.", XmlParserInfo::Error,
                           line, static_cast<int>(pl - str.begin() + 1));
                 throw XmlException(XmlError::XML_ERROR_PARSING_COMMENT);
             }
-
 
             content.clear();
             if (pos == string::npos) {
@@ -145,10 +165,10 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                 if (static_cast<int>(pos - 1) >
                     pl - str.begin())  // 某一行单独以 ]]> 结尾
                     content = string(pl, str.begin() + pos);
-                
+
                 nxt->setEndLine(line);
                 nxt->setEndPos(pos);
-                
+
                 pl = str.begin() + pos + 3;
                 nxt->content += content;
             }
@@ -174,14 +194,100 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                 if (static_cast<int>(pos - 1) >
                     pl - str.begin())  // 某一行单独以 ]> 结尾
                     content = string(pl, str.begin() + pos);
-                
+
                 nxt->setEndLine(line);
                 nxt->setEndPos(pos);
-                
+
                 pl = str.begin() + pos + 2;
                 nxt->content += content;
-                
             }
+        } else if (__isInLabel) {
+            //上一个Label 尚未结束
+            XmlUtil::skipWhiteSpace(pl, pr, line);
+
+            while (pl == pr) {
+                __nextLine(str, pl, pr, line);
+                XmlUtil::skipWhiteSpace(pl, pr, line);
+            }
+
+            // auto nxt = cur->getLastSonByType(XmlSyntax::Xmlelement);
+            if (cur->getType() != XmlSyntax::XmlTest) {
+                printInfo("Invalid label.", XmlParserInfo::Error, line,
+                          static_cast<int>(pl - str.begin() + 1));
+                throw XmlException(XmlError::XML_ERROR_PARSING_ELEMENT);
+            }
+            if (*pl != '>') {
+                //处理未结束的键值对
+                //单独处理某一个分开的
+                // key1=
+                // value key2=value
+                string lastkey;
+
+                for (auto& x : cur->Tag.key_value) {
+                    if (x.second == "__this_is_empty_mark__") {
+                        lastkey = x.first;
+                        break;
+                    }
+                }
+
+                if (lastkey.length()) {
+                    string tmp_s;
+                    tmp_s.reserve(128);
+                    int _type = 0;
+                    if (pl != pr && *pl == '\'') {
+                        _type = 1;
+                        ++pl;
+                    } else if (pl != pr && *pl == '\"') {
+                        _type = 2;
+                        ++pl;
+                    }
+                    bool success = 0;
+                    while (pl != pr && *pl != ' ' && *pl != '/') {
+                        if (_type == 1 && *pl == '\'') {
+                            success = 1;
+                            ++pl;   //跳过引号
+                            break;
+                        } else if (_type == 2 && *pl == '\"') {
+                            success = 1;
+                            ++pl;
+                            break;
+                        }
+                        tmp_s += *pl++;
+                    }
+                    if(!_type && !tmp_s.size())   success = 0;
+                    if (!success) {
+                        printInfo("Invalid label.", XmlParserInfo::Error, line,
+                                  static_cast<int>(pl - str.begin() + 1));
+                        throw XmlException(XmlError::XML_ERROR_PARSING_ELEMENT);
+                    }
+                    cur->Tag.key_value[lastkey] = tmp_s;
+                }
+                // bool _flag_ = 0;
+                //上一行没有key1
+                // if (!_flag_) {
+                //     printInfo("Invalid label.", XmlParserInfo::Error,
+                //     line,
+                //               static_cast<int>(pl - str.begin() + 1));
+                //     throw
+                //     XmlException(XmlError::XML_ERROR_PARSING_ELEMENT);
+                // }
+                //把接下来的干完
+                __parseKeyValue(str, cur, pl, pr);
+
+                XmlUtil::skipWhiteSpace(pl, pr, line);
+                if (pl == pr) {
+                    __nextLine(str, pl, pr, line);
+                    continue;
+                }
+                if (*pl != '>') {
+                    printInfo("Invalid label.", XmlParserInfo::Error, line,
+                              static_cast<int>(pl - str.begin() + 1));
+                    throw XmlException(XmlError::XML_ERROR_PARSING_ELEMENT);
+                }
+            }
+            //跳过 />
+            ++pl;
+            __isInLabel = false;
         }
         auto res = identify(pl, pr, line);
         switch (res) {
@@ -192,8 +298,9 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
             case 0: {
                 content.clear();
 
-                if(!cur->getBeginLine())    cur->setBeginLine(line);
-                if(cur->getBeginPos() != XmlNode::npos) cur->setBeginPos(pl - str.begin());
+                if (!cur->getBeginLine()) cur->setBeginLine(line);
+                if (cur->getBeginPos() != XmlNode::npos)
+                    cur->setBeginPos(pl - str.begin());
 
                 while (*pl != '<' && pl != pr) {
                     content += *pl++;
@@ -273,7 +380,7 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                 XmlNode* node = new XmlNode;
                 cur->addNode(node);
                 node->type = XmlSyntax::XmlUnknown;
-                
+
                 node->setBeginLine(line);
                 node->setBeginPos(pl - str.begin());
 
@@ -284,7 +391,6 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                     content = string(pl, str.end());
                     __nextLine(str, pl, pr, line);
                 } else {
-
                     node->setEndLine(line);
                     node->setEndPos(pos);
 
@@ -301,7 +407,7 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                     "ignored.",
                     XmlParserInfo::Warning, line,
                     static_cast<int>(pl - str.begin()));
-                
+
                 XmlNode* node = new XmlNode;
                 cur->addNode(node);
                 node->type = XmlSyntax::XmlUnknown;
@@ -322,7 +428,7 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                     content = string(pl, str.begin() + pos - 1);
                     pl = str.begin() + pos + 3;  //跳过尾部
                 }
-                
+
                 node->content = content;
             } break;
             case 5: {
@@ -337,13 +443,13 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
 
                     node->setBeginLine(line);
                     node->setBeginPos(pl - 1 - str.begin());
+                    node->setType(XmlSyntax::Xmlelement);
 
                     isTagEnd = 0;
-                } else{
+                } else {
                     ++pl;  //跳过'/'
                     cur->setEndLine(line);
                     cur->setBeginPos(pl - 2 - str.begin());
-
                 }
                 // auto pos = str.find('>', pl - str.begin());
                 if (XmlUtil::isNameStartChar(*pl)) {
@@ -372,12 +478,25 @@ void XmlDocument::__parse(XmlNode* cur, int depth, int& line, std::string& str,
                             //该标签为空标签
                             ++pl;
                             node->type = XmlSyntax::XmlEmptylabel;
-                            
+
                             node->setEndLine(line);
                             node->setEndPos(pl - str.begin());
-
                         }
                         if (*pl != '>' && !XmlUtil::isNameChar(*pl)) {
+                            //结尾在另一行
+                            while (pl != pr && XmlUtil::isWhite(*pl)) ++pl;
+
+                            if (pl == pr) {
+                                //设置一个特殊的标记
+                                node->setType(XmlSyntax::XmlTest);
+
+                                __nextLine(str, pl, pr, line);
+                                __isInLabel = true;
+                                __parse(node,depth + 1,line,str,pl,pr);
+
+                                continue;
+                            }
+
                             printInfo("Broken header.", XmlParserInfo::Error,
                                       line,
                                       static_cast<int>(pl - str.begin() + 1));
@@ -489,7 +608,5 @@ void XmlDocument::open(const std::string& filename) {
     FileName = filename;
     __setOpenstate();
 }
-void XmlDocument::close() {
-    __clearState();
-}
+void XmlDocument::close() { __clearState(); }
 };  // namespace xmlParser

@@ -231,9 +231,12 @@ class XmlDocument {
     std::string FileName;
     std::ifstream in;
     std::ofstream out;
+    
     bool __isInComment = false;
     bool __isInCDATA = false;
     bool __isIndtd = false;
+    bool __isInLabel = false;
+
     int curLine = 1;
     using It = std::string::iterator;
     std::string __last_info;
@@ -259,12 +262,15 @@ class XmlDocument {
     void __parse(XmlNode*, int, int&, std::string&, It&, It&);
     void __clearState();
     void __setOpenstate();
-    void __parseKeyValue(std::string&, XmlNode*, It&, It&);
+    static void __parseKeyValue(std::string&, XmlNode*, It&, It&);
     void __nextLine(std::string&, It&, It&, int&);
     void __checkEnd(std::string&, It&, It&, int&);
     int identify(std::string::iterator&, std::string::iterator&, int&);
 
    public:
+    static int Identify(std::string::iterator&, std::string::iterator&);
+    static void parseKeyValue(std::string&, It&, It&,XmlNode&);
+
     XmlDocument(const std::string&);
     // XmlDocument(const std::string& filecontent);
     XmlDocument() = default;
