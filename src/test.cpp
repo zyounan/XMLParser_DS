@@ -47,10 +47,11 @@ class Editor : public cppurses::layout::Vertical {
     opt::Optional<cppurses::Color> cur_color;
 
     struct __parse_helper {
-        bool isInComment = false;      // 注释 蓝色
-        bool isInCDATA = false;        // CDATA 棕色
-        bool isIndtd = false;          // dtd 蓝色
-        bool isInLabel = false;        // label 红色
+        bool isInComment = false;  // 注释 蓝色
+        bool isInCDATA = false;    // CDATA 棕色
+        bool isIndtd = false;      // dtd 蓝色
+        bool isInLabel = false;    // label 红色
+        int sta_sum = 0;
         bool isStillKeyValue = false;  // key value 换行
     } parse_flag;
 
@@ -247,6 +248,7 @@ class Editor : public cppurses::layout::Vertical {
         if (pl != pr && *pl == '>') {
             res.append(">", detail::ForegroundColor::Red);
             ++pl;
+            parse_flag.sta_sum--;
             parse_flag.isInLabel = false;
             parse_flag.isStillKeyValue = false;
         }
@@ -292,7 +294,7 @@ class Editor : public cppurses::layout::Vertical {
                 //整行都是
                 return {tmp, detail::ForegroundColor::Blue};
             }
-        } else if (parse_flag.isInLabel) {
+        } else if (parse_flag.sta_sum > 0) {
             string content;
             content.reserve(128);
 
@@ -300,20 +302,22 @@ class Editor : public cppurses::layout::Vertical {
 
             if (pos != string::npos) {
                 res.clear();
-                for(int i = 0;i <= (int)pos;++i)    res.append(line[i]);                
+                for (int i = 0; i <= (int)pos; ++i) res.append(line[i]);
                 pl = tmp.begin() + pos + 1;
+                while (pl != pr && XmlUtil::isWhite(*pl)) {
+                    res.append(std::string{*pl},
+                               detail::ForegroundColor::White);
+                    ++pl;
+                }
+                content.clear();
+                while (pl != pr && !XmlUtil::isWhite(*pl) && *pl != '>') {
+                    if (*pl == '\'' || *pl == '\"') break;
+                    content += *(pl++);
+                }
+                res.append(content, detail::ForegroundColor::Red);
             }
+            //若前面没有尖括号，认为是key-value
 
-            while (pl != pr && XmlUtil::isWhite(*pl)) {
-                res.append(std::string{*pl}, detail::ForegroundColor::White);
-                ++pl;
-            }
-            content.clear();
-            while (pl != pr && !XmlUtil::isWhite(*pl) && *pl != '>') {
-                if (*pl == '\'' || *pl == '\"') break;
-                content += *(pl++);
-            }
-            res.append(content, detail::ForegroundColor::Red);
             __parse_key_value(res, pl, pr);
         }
 
@@ -333,7 +337,7 @@ class Editor : public cppurses::layout::Vertical {
                 } break;
                 case 0: {
                     //普通的内容
-                    if (parse_flag.isStillKeyValue) {
+                    if (parse_flag.sta_sum > 0) {
                         __parse_key_value(res, pl, pr);
                     }
                     string content;
@@ -342,10 +346,17 @@ class Editor : public cppurses::layout::Vertical {
                     // auto pos = tmp.find_last_of(">",pos2);
                     //
 
-                    res.clear();
-                    auto tt = pl - tmp.begin();
-                    for (int i = 0; i < (int)tt; ++i) res.append(line[i]);
 
+                    res.clear();
+                    // auto tt = pl - tmp.begin();
+                    int i = (int)tmp.size() - 2;    //在最后一个输入的字符之前
+                    for (; i >= 0; --i) {
+                        if (line[i].brush.foreground_color().get() !=
+                            Color::White)
+                            break;
+                    }
+                    for(int j = 0;j <= i;++j)   res.append(line[j]);
+                    pl = tmp.begin() + i + 1;
                     // if (pos != string::npos){
                     //     // pl = tmp.begin() + pos + 1;
                     // }
@@ -363,7 +374,7 @@ class Editor : public cppurses::layout::Vertical {
                     string content;
                     assert(*pl == '<');
                     parse_flag.isInLabel = true;
-
+                    parse_flag.sta_sum++;
                     res.append("<", detail::ForegroundColor::Red);
                     ++pl;
                     content.reserve(128);
