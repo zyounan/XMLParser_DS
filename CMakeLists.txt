@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.0)
 project(myXmlParser)
 
 aux_source_directory(src DIR_SRCS) 
-# aux_source_directory(tools/editor DIR_EDITOR_SRCS) 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z")
 set(CMAKE_CXX_COMPILER "/usr/bin/g++-8")
