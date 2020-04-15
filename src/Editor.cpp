@@ -261,19 +261,43 @@ class Editor : public cppurses::layout::Vertical {
 
         Glyph_string res;
         auto pl = tmp.begin(), pr = tmp.end();
-        if (parse_flag.isInComment) {
-            auto pos = tmp.find("-->");
+        if (parse_flag.isIndtd) {
+            auto pos = tmp.find("]]>", pl - tmp.begin());
             if (pos != string::npos) {
-                parse_flag.isInComment = false;
+                parse_flag.isIndtd = false;
                 res.append(tmp.substr(0, pos + 3),
                            detail::ForegroundColor::Blue);
                 pl = (tmp.begin() + pos + 3);
             } else {
-                //整行都是注释
+                //整行都是
                 return {tmp, detail::ForegroundColor::Blue};
             }
+        } else if (parse_flag.isInComment) {
+            auto pos = tmp.find("-->", pl - tmp.begin());
+            auto pos2 = tmp.find_last_of("<!--");
+            if (pos2 == string::npos && pos != string::npos) {
+                parse_flag.isInComment = false;
+
+                res.append(tmp.substr(0, pos + 3),
+                           detail::ForegroundColor::Blue);
+
+                pl = (tmp.begin() + pos + 3);
+            } else {
+                if (pos2 == string::npos) {
+                    //整一行都是注释
+                    return {tmp, detail::ForegroundColor::Blue};
+                } else if (pos == string::npos) {
+                    res.clear();
+                    // auto tt = pl - tmp.begin();
+                    for (int j = 0; j < (int)pos2; ++j) res.append(line[j]);
+                    res.append(std::string{tmp.begin() + pos2, tmp.end()},
+                               detail::ForegroundColor::Blue);
+                    return res;
+                } else
+                    parse_flag.isInComment = false;
+            }
         } else if (parse_flag.isInCDATA) {
-            auto pos = tmp.find("]]>");
+            auto pos = tmp.find("]]>", pl - tmp.begin());
             if (pos != string::npos) {
                 parse_flag.isInCDATA = false;
                 res.append(tmp.substr(0, pos + 3),
@@ -283,42 +307,35 @@ class Editor : public cppurses::layout::Vertical {
                 //整行都是
                 return {tmp, detail::ForegroundColor::Brown};
             }
-        } else if (parse_flag.isIndtd) {
-            auto pos = tmp.find("]>");
-            if (pos != string::npos) {
-                parse_flag.isIndtd = false;
-                res.append(tmp.substr(0, pos + 2),
-                           detail::ForegroundColor::Blue);
-                pl = (tmp.begin() + pos + 2);
-            } else {
-                //整行都是
-                return {tmp, detail::ForegroundColor::Blue};
-            }
         } else if (parse_flag.sta_sum > 0) {
             string content;
             content.reserve(128);
 
             auto pos = tmp.find_last_of('<');
+            if (pos != tmp.size() - 1 && tmp[pos + 1] == '!') {
+                //排除尖括号后紧跟!的情形
+                parse_flag.sta_sum--;
 
-            if (pos != string::npos) {
-                res.clear();
-                for (int i = 0; i <= (int)pos; ++i) res.append(line[i]);
-                pl = tmp.begin() + pos + 1;
-                while (pl != pr && XmlUtil::isWhite(*pl)) {
-                    res.append(std::string{*pl},
-                               detail::ForegroundColor::White);
-                    ++pl;
+            } else {
+                if (pos != string::npos) {
+                    res.clear();
+                    for (int i = 0; i <= (int)pos; ++i) res.append(line[i]);
+                    pl = tmp.begin() + pos + 1;
+                    while (pl != pr && XmlUtil::isWhite(*pl)) {
+                        res.append(std::string{*pl},
+                                   detail::ForegroundColor::White);
+                        ++pl;
+                    }
+                    content.clear();
+                    while (pl != pr && !XmlUtil::isWhite(*pl) && *pl != '>') {
+                        if (*pl == '\'' || *pl == '\"') break;
+                        content += *(pl++);
+                    }
+                    res.append(content, detail::ForegroundColor::Red);
                 }
-                content.clear();
-                while (pl != pr && !XmlUtil::isWhite(*pl) && *pl != '>') {
-                    if (*pl == '\'' || *pl == '\"') break;
-                    content += *(pl++);
-                }
-                res.append(content, detail::ForegroundColor::Red);
+                //若前面没有尖括号，认为是key-value
+                __parse_key_value(res, pl, pr);
             }
-            //若前面没有尖括号，认为是key-value
-
-            __parse_key_value(res, pl, pr);
         }
 
         while (pl != pr) {
@@ -346,16 +363,19 @@ class Editor : public cppurses::layout::Vertical {
                     // auto pos = tmp.find_last_of(">",pos2);
                     //
 
-
                     res.clear();
                     // auto tt = pl - tmp.begin();
-                    int i = (int)tmp.size() - 2;    //在最后一个输入的字符之前
+                    // int i = (int)tmp.size() - 2;  //在最后一个输入的字符之前
+                    int i = pl - tmp.begin();  //在最后一个输入的字符之前
+                    if (i >= 0 && line[i].symbol == L'<') {
+                        --i;
+                    }
                     for (; i >= 0; --i) {
                         if (line[i].brush.foreground_color().get() !=
                             Color::White)
                             break;
                     }
-                    for(int j = 0;j <= i;++j)   res.append(line[j]);
+                    for (int j = 0; j <= i; ++j) res.append(line[j]);
                     pl = tmp.begin() + i + 1;
                     // if (pos != string::npos){
                     //     // pl = tmp.begin() + pos + 1;
@@ -374,6 +394,7 @@ class Editor : public cppurses::layout::Vertical {
                     string content;
                     assert(*pl == '<');
                     parse_flag.isInLabel = true;
+                    parse_flag.isInComment = false;
                     parse_flag.sta_sum++;
                     res.append("<", detail::ForegroundColor::Red);
                     ++pl;
@@ -387,9 +408,63 @@ class Editor : public cppurses::layout::Vertical {
 
                 } break;
                 case 2:
-                case 3:
                 case 4: {
-                }
+                    //注释和dtd
+                    assert(*pl == '<' && *(pl + 1) == '!');
+                    if (pl + 2 != pr && *(pl + 2) == '-') {
+                        parse_flag.isInComment = true;
+                    } else if (pl + 8 != pr && *(pl + 2) == 'D' &&
+                               *(pl + 3) == 'O' && *(pl + 4) == 'C' &&
+                               *(pl + 5) == 'T' && *(pl + 6) == 'Y' &&
+                               *(pl + 7) == 'P' && *(pl + 8) == 'E') {
+                        //是DOCTYPE
+                        parse_flag.isIndtd = true;
+                    } else {
+                        pl += 2;
+                        res.append("<!", detail::ForegroundColor::White);
+                        break;
+                    }
+                    const char* flag = parse_flag.isInComment ? "-->" : "]]>";
+
+                    if (pl != pr) {
+                        auto pos = tmp.find(flag, pl - tmp.begin());
+                        decltype(pl) _end;
+                        if (pos != string::npos) {
+                            res.append(std::string{pl, tmp.begin() + pos + 3},
+                                       detail::ForegroundColor::Blue);
+                            _end = tmp.begin() + pos + 3;
+
+                            parse_flag.isInComment = parse_flag.isIndtd = false;
+
+                        } else {
+                            res.append(std::string{pl, tmp.end()},
+                                       detail::ForegroundColor::Blue);
+                            _end = tmp.end();
+                        }
+                        pl = _end;
+                    }
+
+                } break;
+                case 3: {
+                    // cdata
+                    assert(*pl == '<' && *(pl + 1) == '!' && *(pl + 2) == '[');
+                    parse_flag.isInCDATA = true;
+                    if (pl != pr) {
+                        auto pos = tmp.find("]]>", pl - tmp.begin());
+                        decltype(pl) _end;
+                        if (pos != string::npos) {
+                            parse_flag.isInCDATA = false;
+                            res.append(std::string{pl, tmp.begin() + pos + 2},
+                                       detail::ForegroundColor::Blue);
+                            _end = tmp.begin() + pos + 3;
+                        } else {
+                            res.append(std::string{pl, tmp.end()},
+                                       detail::ForegroundColor::Blue);
+                            _end = tmp.end();
+                        }
+                        pl = _end;
+                    }
+                } break;
 
             }  // end switch
         }
@@ -484,12 +559,27 @@ class Editor : public cppurses::layout::Vertical {
         textbox.contents_modified.connect([&, this](const Glyph_string& text) {
             int line = textbox.cursor.y();
             size_t pos = textbox.index_at({(size_t)0, (size_t)line});
-
             Glyph_string tmp = {text.begin() + pos,
                                 text.begin() + pos + textbox.row_length(line)};
+            if (!text.size()) {
+                //如果文本为空就清空之前的标记
+                this->parse_flag.sta_sum = 0, this->parse_flag.isInCDATA = 0,
+                this->parse_flag.isInComment = 0,
+                this->parse_flag.isIndtd = this->parse_flag.isInLabel = 0;
+            } else {
+                //暴力看一看前面还有没有注释没有闭合的。
+                //处理删除字符的情况
+                int cnt = 0;
+                std::string ss = tmp.str();
+                int t = ss.find("<!--");
+                for (; t != (int)std::string::npos;) {
+                    if (t != (int)std::string::npos)
+                        cnt += ((cnt & 1) ? -1 : 1);
+                    t = ss.find((cnt & 1) ? "-->" : "<!--", t + 1);
+                }
 
-            // std::cerr << tmp.str() << std::endl;
-
+                this->parse_flag.isInComment = cnt != 0;
+            }
             Glyph_string res = __parse_line(tmp);
 
             textbox.contents_modified.disable();
