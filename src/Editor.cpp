@@ -1,20 +1,3 @@
-// #include "stdc++.h"
-// #include "xml.h"
-// #include "ui.h"
-// int main() {
-//     using namespace std;
-//     using namespace xmlParser;
-//     freopen("/root/XML/test/dataout1.xml", "w", stdout);
-//     XmlDocument file;
-//     file.open("/root/XML/test/datain1.xml");
-//     try {
-//         file.Parse();
-//     } catch (...) {
-//         exit(-1);
-//     }
-//     return 0;
-// }
-
 #include <cppurses/cppurses.hpp>
 #include <cppurses/widget/layouts/horizontal.hpp>
 #include <cppurses/widget/layouts/vertical.hpp>
@@ -23,17 +6,116 @@
 #include <cppurses/widget/widgets/label.hpp>
 #include <cppurses/widget/widgets/push_button.hpp>
 #include <cppurses/widget/widgets/textbox.hpp>
+// UI headers
+// Boost.Regex
+#include <boost/regex.hpp>
 
 #include "stdc++.h"
 #include "xml.h"
+
 namespace Editor {
+
+//定时器实现
+class Timer {
+public:
+    Timer() : expired_(true), try_to_expire_(false) {
+    }
+
+    Timer(const Timer& t) {
+        expired_ = t.expired_.load();
+        try_to_expire_ = t.try_to_expire_.load();
+    }
+    ~Timer() {
+        Expire();
+        //      std::cout << "timer destructed!" << std::endl;
+    }
+
+    void StartTimer(int interval, std::function<void()> task) {
+        if (!expired_) {
+            //          std::cout << "timer is currently running, please expire it first..." << std::endl;
+            return;
+        }
+        expired_ = false;
+        std::thread([this, interval, task]() {
+            while (!try_to_expire_) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(interval));
+                task();
+            }
+            //          std::cout << "stop task..." << std::endl;
+            {
+                std::lock_guard<std::mutex> locker(mutex_);
+                expired_ = true;
+                expired_cond_.notify_one();
+            }
+        }).detach();
+    }
+
+    void Expire() {
+        if (expired_) {
+            return;
+        }
+
+        if (try_to_expire_) {
+            //          std::cout << "timer is trying to expire, please wait..." << std::endl;
+            return;
+        }
+        try_to_expire_ = true;
+        {
+            std::unique_lock<std::mutex> locker(mutex_);
+            expired_cond_.wait(locker, [this] { return expired_ == true; });
+            if (expired_ == true) {
+                //              std::cout << "timer expired!" << std::endl;
+                try_to_expire_ = false;
+            }
+        }
+    }
+
+    template <typename callable, class... arguments>
+    void SyncWait(int after, callable&& f, arguments&&... args) {
+        std::function<typename std::result_of<callable(arguments...)>::type()> task(std::bind(std::forward<callable>(f), std::forward<arguments>(args)...));
+        std::this_thread::sleep_for(std::chrono::milliseconds(after));
+        task();
+    }
+    template <typename callable, class... arguments>
+    void AsyncWait(int after, callable&& f, arguments&&... args) {
+        std::function<typename std::result_of<callable(arguments...)>::type()> task(std::bind(std::forward<callable>(f), std::forward<arguments>(args)...));
+
+        std::thread([after, task]() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(after));
+            task();
+        }).detach();
+    }
+
+private:
+    std::atomic<bool> expired_;
+    std::atomic<bool> try_to_expire_;
+    std::mutex mutex_;
+    std::condition_variable expired_cond_;
+};
+
+static constexpr const char *
+    reg_ver = R"...((?<=version\=[\"|\'])[\w|\.]+(?=[\"|\']))...",
+   *reg_encoding = R"...((?<=encoding\=[\"|\'])[\w|\F.|\-]+(?=[\"|\']))...",
+   *reg_standalone =
+       R"...((?<=standalone\=[\"|\'])[\w|\.|\-]+(?=[\"|\']))...",
+   *reg_label_start = R"...((?<!\")<[^\f\n\r\t\v\/\!]+?(>|\/>))...",
+   *reg_label = R"...((?<!\")<[^\f\t\v\!]+?(>|\/>))...",
+   *reg_label_end =
+       R"...((?<!\")(<\/[^\f\n\r\t\v\/\!]+?>|<[^\f\n\r\t\v\/\!]+?\/>))...",
+   *reg_label_args_without_quotes =
+       R"...((?<=\ )((?<!("|'))[^=\ ])+=[^"'>\/\ ]+)...",
+   *reg_label_args_with_quotes =
+       R"...((?<=\ )((?<!("|'))[^=\ ])+=("|').*?("|'))...",
+   *reg_label_args = R"...((\S+)=[^(>\/\ )]+)...",
+   *reg_comment = R"...((?<!\")<!--[^\f\n\r\t\v\!]+)...";
+
 using namespace cppurses;
 class Editor_menu_help : public cppurses::layout::Vertical {
-   public:
+public:
     Editor_menu_help() {}
 };
 class Editor_menu : public cppurses::layout::Horizontal {
-   public:
+public:
     Menu_stack& menu_stack = this->make_child<Menu_stack>();
     Editor_menu_help& menu_help =
         menu_stack.make_page<Editor_menu_help>("Help");
@@ -42,18 +124,32 @@ class Editor_menu : public cppurses::layout::Horizontal {
 };
 
 class Editor : public cppurses::layout::Vertical {
-   private:
+private:
     Glyph_string glyph;
     opt::Optional<cppurses::Color> cur_color;
+    Timer highlight_timer;
+    std::mutex lock;
 
+    enum class __parse_state {
+        clear,
+        comment,
+        cdata,
+        dtd,
+        label,
+        key_value,
+        content
+    };
     struct __parse_helper {
         bool isInComment = false;  // 注释 蓝色
         bool isInCDATA = false;    // CDATA 棕色
         bool isIndtd = false;      // dtd 蓝色
         bool isInLabel = false;    // label 红色
         int sta_sum = 0;
-        bool isStillKeyValue = false;  // key value 换行
+        bool isStillKeyValue = false;                        // key value 换行
+        __parse_state current_state = __parse_state::clear;  //初始化为空
     } parse_flag;
+    boost::regex Reg_label{reg_label}, Reg_label_start{reg_label_start}, Reg_label_end{reg_label_end},
+        Reg_comment{reg_comment};
 
     void __print_xml(xmlParser::XmlNode* root, int d) {
         static auto __printTab = [this](int y) {
@@ -185,12 +281,14 @@ class Editor : public cppurses::layout::Vertical {
             textbox.set_contents(oss.str());
         }
     }
-    void __parse_key_value(Glyph_string& res, std::string::iterator& pl,
-                           std::string::iterator& pr) {
+    void __parse_key_value(Glyph_string& res, std::string::const_iterator& pl,
+                           std::string::const_iterator& pr) {
         using namespace std;
         using namespace xmlParser;
         string content;
         while (pl != pr && *pl != '>') {
+            parse_flag.current_state = __parse_state::label;
+
             content.clear();
             // key
             // XmlUtil::skipWhiteSpace(pl, pr);
@@ -213,7 +311,8 @@ class Editor : public cppurses::layout::Vertical {
             if (*pl == '=') {
                 res.append("=", detail::ForegroundColor::White);
                 ++pl;
-                parse_flag.isStillKeyValue = true;
+                // parse_flag.isStillKeyValue = true;
+                parse_flag.current_state = __parse_state::key_value;
             }
 
             while (pl != pr && XmlUtil::isWhite(*pl)) {
@@ -248,230 +347,115 @@ class Editor : public cppurses::layout::Vertical {
         if (pl != pr && *pl == '>') {
             res.append(">", detail::ForegroundColor::Red);
             ++pl;
-            parse_flag.sta_sum--;
-            parse_flag.isInLabel = false;
-            parse_flag.isStillKeyValue = false;
+            parse_flag.current_state = __parse_state::clear;
+            // parse_flag.sta_sum--;
+            // parse_flag.isInLabel = false;
+            // parse_flag.isStillKeyValue = false;
         }
     }
+
     Glyph_string __parse_line(const cppurses::Glyph_string& line) {
         using namespace xmlParser;
-        using namespace std;
+        using namespace boost;
+        using std::string;
 
         string tmp = line.str();
 
         Glyph_string res;
-        auto pl = tmp.begin(), pr = tmp.end();
-        if (parse_flag.isIndtd) {
-            auto pos = tmp.find("]]>", pl - tmp.begin());
-            if (pos != string::npos) {
-                parse_flag.isIndtd = false;
-                res.append(tmp.substr(0, pos + 3),
-                           detail::ForegroundColor::Blue);
-                pl = (tmp.begin() + pos + 3);
-            } else {
-                //整行都是
-                return {tmp, detail::ForegroundColor::Blue};
-            }
-        } else if (parse_flag.isInComment) {
-            auto pos = tmp.find("-->", pl - tmp.begin());
-            auto pos2 = tmp.find_last_of("<!--");
-            if (pos2 == string::npos && pos != string::npos) {
-                parse_flag.isInComment = false;
-
-                res.append(tmp.substr(0, pos + 3),
-                           detail::ForegroundColor::Blue);
-
-                pl = (tmp.begin() + pos + 3);
-            } else {
-                if (pos2 == string::npos) {
-                    //整一行都是注释
-                    return {tmp, detail::ForegroundColor::Blue};
-                } else if (pos == string::npos) {
-                    res.clear();
-                    // auto tt = pl - tmp.begin();
-                    for (int j = 0; j < (int)pos2; ++j) res.append(line[j]);
-                    res.append(std::string{tmp.begin() + pos2, tmp.end()},
-                               detail::ForegroundColor::Blue);
-                    return res;
-                } else
-                    parse_flag.isInComment = false;
-            }
-        } else if (parse_flag.isInCDATA) {
-            auto pos = tmp.find("]]>", pl - tmp.begin());
-            if (pos != string::npos) {
-                parse_flag.isInCDATA = false;
-                res.append(tmp.substr(0, pos + 3),
-                           detail::ForegroundColor::Brown);
-                pl = (tmp.begin() + pos + 3);
-            } else {
-                //整行都是
-                return {tmp, detail::ForegroundColor::Brown};
-            }
-        } else if (parse_flag.sta_sum > 0) {
-            string content;
-            content.reserve(128);
-
-            auto pos = tmp.find_last_of('<');
-            if (pos != tmp.size() - 1 && tmp[pos + 1] == '!') {
-                //排除尖括号后紧跟!的情形
-                parse_flag.sta_sum--;
-
-            } else {
-                if (pos != string::npos) {
-                    res.clear();
-                    for (int i = 0; i <= (int)pos; ++i) res.append(line[i]);
-                    pl = tmp.begin() + pos + 1;
-                    while (pl != pr && XmlUtil::isWhite(*pl)) {
-                        res.append(std::string{*pl},
-                                   detail::ForegroundColor::White);
-                        ++pl;
-                    }
-                    content.clear();
-                    while (pl != pr && !XmlUtil::isWhite(*pl) && *pl != '>') {
-                        if (*pl == '\'' || *pl == '\"') break;
-                        content += *(pl++);
-                    }
-                    res.append(content, detail::ForegroundColor::Red);
-                }
-                //若前面没有尖括号，认为是key-value
-                __parse_key_value(res, pl, pr);
-            }
-        }
+        smatch what;
+        auto pl = tmp.cbegin(), pr = tmp.cend();
+        if (pl == pr) return {};
 
         while (pl != pr) {
-            //空白跳过
-
-            while (pl != pr && XmlUtil::isWhite(*pl)) {
-                res.append(std::string{*pl}, detail::ForegroundColor::White);
-                ++pl;
-            }
-
-            int mark = XmlDocument::Identify(pl, pr);
-            switch (mark) {
-                case -1: {
-                    //空行
-                    return tmp;
-                } break;
-                case 0: {
-                    //普通的内容
-                    if (parse_flag.sta_sum > 0) {
-                        __parse_key_value(res, pl, pr);
-                    }
+            //不是特殊标记起始
+            if (*pl != '<') {
+                //普通文本
+                if (parse_flag.current_state == __parse_state::clear) {
                     string content;
-                    //除最后一个标签的前面所有不用管 已经解析过了
-                    // auto pos2 = tmp.find_last_of("<");
-                    // auto pos = tmp.find_last_of(">",pos2);
-                    //
-
-                    res.clear();
-                    // auto tt = pl - tmp.begin();
-                    // int i = (int)tmp.size() - 2;  //在最后一个输入的字符之前
-                    int i = pl - tmp.begin();  //在最后一个输入的字符之前
-                    if (i >= 0 && line[i].symbol == L'<') {
-                        --i;
-                    }
-                    for (; i >= 0; --i) {
-                        if (line[i].brush.foreground_color().get() !=
-                            Color::White)
-                            break;
-                    }
-                    for (int j = 0; j <= i; ++j) res.append(line[j]);
-                    pl = tmp.begin() + i + 1;
-                    // if (pos != string::npos){
-                    //     // pl = tmp.begin() + pos + 1;
-                    // }
-
-                    while (pl != pr && *pl != '<') {
-                        content += *pl++;
-                    }
-                    res.append(content, detail::ForegroundColor::White);
-                    break;
-                }
-                case 1:
-                case 5: {
-                    // 标签 红色
-                    // 键: 绿色；等号：白色；值：黄色
-                    string content;
-                    assert(*pl == '<');
-                    parse_flag.isInLabel = true;
-                    parse_flag.isInComment = false;
-                    parse_flag.sta_sum++;
-                    res.append("<", detail::ForegroundColor::Red);
-                    ++pl;
                     content.reserve(128);
-                    while (pl != pr && !XmlUtil::isWhite(*pl) && *pl != '>') {
-                        content += *(pl++);
-                    }
-                    res.append(content, detail::ForegroundColor::Red);
+                    size_t nxt = tmp.find('<', pl - tmp.cbegin());
+                    content = tmp.substr(pl - tmp.cbegin(), nxt - (pl - tmp.cbegin()));
+                    res.append(content, cppurses::detail::ForegroundColor::White);
 
-                    __parse_key_value(res, pl, pr);
-
-                } break;
-                case 2:
-                case 4: {
-                    //注释和dtd
-                    assert(*pl == '<' && *(pl + 1) == '!');
-                    if (pl + 2 != pr && *(pl + 2) == '-') {
-                        parse_flag.isInComment = true;
-                    } else if (pl + 8 != pr && *(pl + 2) == 'D' &&
-                               *(pl + 3) == 'O' && *(pl + 4) == 'C' &&
-                               *(pl + 5) == 'T' && *(pl + 6) == 'Y' &&
-                               *(pl + 7) == 'P' && *(pl + 8) == 'E') {
-                        //是DOCTYPE
-                        parse_flag.isIndtd = true;
+                    if (nxt == string::npos)
+                        pl = pr;
+                    else
+                        pl = tmp.cbegin() + nxt;
+                }
+                //其他情况……
+                else if (parse_flag.current_state == __parse_state::comment) {
+                    string content;
+                    content.reserve(128);
+                    size_t nxt = tmp.find("-->", pl - tmp.cbegin());
+                    content = tmp.substr(pl - tmp.cbegin(), nxt - (pl - tmp.cbegin()));
+                    if (nxt == string::npos) {
+                        pl = pr;
                     } else {
-                        pl += 2;
-                        res.append("<!", detail::ForegroundColor::White);
-                        break;
+                        pl = tmp.begin() + nxt + 3;
+                        content += "-->";
+                        parse_flag.current_state = __parse_state::clear;
                     }
-                    const char* flag = parse_flag.isInComment ? "-->" : "]]>";
+                    res.append(content, cppurses::detail::ForegroundColor::Blue);
+                } else if (parse_flag.current_state == __parse_state::key_value || parse_flag.current_state == __parse_state::label) {
+                    size_t nxt = tmp.find(">", pl - tmp.cbegin());
+                    __parse_key_value(res, pl, pr);
+                    if (nxt == string::npos) {
+                        pl = pr;
+                    } else
+                        pl = tmp.begin() + nxt;
+                }
+            } else {
+                //解析标签
+                //必须是以pl开头的一个前缀
+                if (regex_search(pl, pr, what, Reg_label) && !what.empty() && what.position(0ul) == 0) {
+                    parse_flag.current_state = __parse_state::label;
 
-                    if (pl != pr) {
-                        auto pos = tmp.find(flag, pl - tmp.begin());
-                        decltype(pl) _end;
-                        if (pos != string::npos) {
-                            res.append(std::string{pl, tmp.begin() + pos + 3},
-                                       detail::ForegroundColor::Blue);
-                            _end = tmp.begin() + pos + 3;
-
-                            parse_flag.isInComment = parse_flag.isIndtd = false;
-
-                        } else {
-                            res.append(std::string{pl, tmp.end()},
-                                       detail::ForegroundColor::Blue);
-                            _end = tmp.end();
-                        }
-                        pl = _end;
+                    auto label_start = what.str(0);
+                    auto l = label_start.cbegin(), r = label_start.cend();
+                    //找到括号开头<
+                    string tag_name;
+                    tag_name.reserve(128);
+                    while (l != r && *l != ' ' && *l != '>') {
+                        tag_name += *l++;
                     }
-
-                } break;
-                case 3: {
-                    // cdata
-                    assert(*pl == '<' && *(pl + 1) == '!' && *(pl + 2) == '[');
-                    parse_flag.isInCDATA = true;
-                    if (pl != pr) {
-                        auto pos = tmp.find("]]>", pl - tmp.begin());
-                        decltype(pl) _end;
-                        if (pos != string::npos) {
-                            parse_flag.isInCDATA = false;
-                            res.append(std::string{pl, tmp.begin() + pos + 2},
-                                       detail::ForegroundColor::Blue);
-                            _end = tmp.begin() + pos + 3;
-                        } else {
-                            res.append(std::string{pl, tmp.end()},
-                                       detail::ForegroundColor::Blue);
-                            _end = tmp.end();
-                        }
-                        pl = _end;
+                    res.append(tag_name, cppurses::detail::ForegroundColor::Red);
+                    if (l != r && *l == '>') {
+                        parse_flag.current_state = __parse_state::clear;
+                        res.append(">", cppurses::detail::ForegroundColor::Red);
+                    } else if (l != r && *l == ' ') {
+                        //解析 Key-Value
+                        __parse_key_value(res, l, r);
                     }
-                } break;
+                    pl = what[0].second;
 
-            }  // end switch
+                } else if (regex_search(pl, pr, what, Reg_comment) && !what.empty() && what.position(0ul) == 0) {
+                    parse_flag.current_state = __parse_state::comment;
+                    string content;
+                    content.reserve(128);
+                    size_t nxt = tmp.find("-->", pl - tmp.cbegin());
+                    content = tmp.substr(pl - tmp.cbegin(), nxt - (pl - tmp.cbegin()));
+
+                    if (nxt == string::npos) {
+                        pl = pr;
+                    } else {
+                        pl = tmp.begin() + nxt + 3;
+                        content += "-->";
+                        parse_flag.current_state = __parse_state::clear;
+                    }
+                    res.append(content, cppurses::detail::ForegroundColor::Blue);
+                } else {
+                    //刚刚输入进来一个< ?，
+                    res.append(string{*pl}, cppurses::detail::ForegroundColor::White);
+                    ++pl;
+                }
+            }
         }
         return res;
     }
+    void __on_timer_highlight() {
+    }
 
-   public:
+public:
     bool is_open_file = false;
     Titlebar& title_bar = this->make_child<Titlebar>("Xml Parser");
     Textbox& textbox = this->make_child<Textbox>();
@@ -521,7 +505,7 @@ class Editor : public cppurses::layout::Vertical {
     }
     void initialize() {
         this->focus_policy = Focus_policy::Strong;
-        // 打开文件 Ctrl + O
+
         static auto _on_enter = [&, this]() {
             Glyph_string gs;
             gs = this->editor_output.contents();
@@ -534,6 +518,7 @@ class Editor : public cppurses::layout::Vertical {
             Shortcuts::remove_shortcut(Key::Code::Enter);
         };
 
+        // 打开文件 Ctrl + O
         Shortcuts::add_shortcut(Key::Code::Ctrl_o).connect([&, this]() {
             this->editor_output.set_contents("");
             this->editor_output.enable_input();
@@ -555,37 +540,48 @@ class Editor : public cppurses::layout::Vertical {
                              detail::ForegroundColor::Red) +
                 Glyph_string(" for help.", Attribute::Bold);
 
-        // 实时高亮
+        // Syntax Highlighting A
         textbox.contents_modified.connect([&, this](const Glyph_string& text) {
+            if (!text.size())
+                return;
+            //锁上去
+            lock.lock();
             int line = textbox.cursor.y();
-            size_t pos = textbox.index_at({(size_t)0, (size_t)line});
-            Glyph_string tmp = {text.begin() + pos,
-                                text.begin() + pos + textbox.row_length(line)};
-            if (!text.size()) {
-                //如果文本为空就清空之前的标记
-                this->parse_flag.sta_sum = 0, this->parse_flag.isInCDATA = 0,
-                this->parse_flag.isInComment = 0,
-                this->parse_flag.isIndtd = this->parse_flag.isInLabel = 0;
-            } else {
-                //暴力看一看前面还有没有注释没有闭合的。
-                //处理删除字符的情况
-                int cnt = 0;
-                std::string ss = tmp.str();
-                int t = ss.find("<!--");
-                for (; t != (int)std::string::npos;) {
-                    if (t != (int)std::string::npos)
-                        cnt += ((cnt & 1) ? -1 : 1);
-                    t = ss.find((cnt & 1) ? "-->" : "<!--", t + 1);
-                }
-
-                this->parse_flag.isInComment = cnt != 0;
+            size_t pos = textbox.index_at({0ul, (size_t)line});
+            int back = (int)pos + (int)textbox.row_length(line) - 1;
+            for (; back >= (int)pos; --back) {
+                auto x = text[back].brush.foreground_color().get();
+                if (x != cppurses::Color::Black && x != cppurses::Color::White)
+                    break;
             }
-            Glyph_string res = __parse_line(tmp);
+            Glyph_string res = {text.begin() + pos, text.begin() + back + 1};
+
+            Glyph_string tmp = {text.begin() + back + 1,
+                                text.begin() + pos + textbox.row_length(line)};
 
             textbox.contents_modified.disable();
+            res = res + __parse_line(tmp);
             textbox.erase(pos, textbox.row_length(line));
             textbox.insert(res, pos);
             textbox.contents_modified.enable();
+
+            lock.unlock();
+        });
+        //Syntax Highlighting B
+        highlight_timer.StartTimer(3000, [&, this] {
+            // size_t pos = textbox.index_at({0ul, textbox.bottom_line()});
+            auto& text = textbox.contents();
+            if (!text.size()) return;
+            //锁上去
+            lock.lock();
+
+            textbox.contents_modified.disable();
+            Glyph_string res = __parse_line(text);
+            textbox.erase(0);
+            textbox.insert(res, 0);
+            textbox.contents_modified.enable();
+
+            lock.unlock();
         });
 
         textbox.key_pressed.connect([&](Key::Code code) {
@@ -619,7 +615,7 @@ class Editor : public cppurses::layout::Vertical {
         editor_output.disable_input();
     }
 
-   protected:
+protected:
     bool focus_in_event() override {
         Focus::set_focus_to(this->textbox);
         return true;

@@ -7,10 +7,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z")
 set(CMAKE_CXX_COMPILER "/usr/bin/g++-8")
 set(CMAKE_BUILD_TYPE "Debug")
 
-set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb -L/usr/local/lib/")
+set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb -L/usr/local/lib/ -pthread")
 set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O2 -Wall -L/usr/local/lib") 
 
 find_package(Curses REQUIRED)
+find_package(Boost REQUIRED COMPONENTS regex)
+include_directories(include ${boost_include_dirs})
+link_libraries(${Boost_LIBRARIES})
+
 include_directories(${CURSES_INCLUDE_DIR})
 
 add_definitions(-DDEBUG)
