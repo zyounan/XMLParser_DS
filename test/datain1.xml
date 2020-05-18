@@ -1,25 +1,23 @@
-<?xml version="114.514" standalone="no" ?>
+<?xml standalone="no" version="114.514" ?>
 <ToDo>
-    <Item priority="2" distance="close">Go to the
-        <bold>Toy store!
+    <Item distance="close" priority="2">
+        <bold>
+            Toy store!
         </bold>
+        <this is="really" good="hahaha">do you know?</this>
     </Item>
-    <!-- com
-    m
-    e
-    n
-    t
-    1 -->
-    <!-- comment
-    2 -->
-    <Item priority="1" distance="far">Talk to:
+    <!--  comment1  -->
+    <!--  comment2  -->
+    <Item distance="far" priority="1">
+        Talk to:
         <Meeting where="School">
-            <Attendee name="Marple" position="teacher" />
-            <!-- comment 3 -->
-            <Attendee name="Voel" position="counselor" />
+            <Attendee position="teacher" name="Marple"/>
+            <!--  comment 3  -->
+            <Attendee position="counselor" name="Voel"/>
         </Meeting>
-        <Meeting where="Lunch" />
+        <Meeting where="Lunch"/>
     </Item>
-    <Item priority="2" distance="here">Do bills
+    <Item distance="here" priority="2">
+        Do bills
     </Item>
 </ToDo>

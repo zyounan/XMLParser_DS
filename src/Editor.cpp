@@ -452,11 +452,10 @@ private:
         }
         return res;
     }
-    void __on_timer_highlight() {
-    }
 
 public:
     bool is_open_file = false;
+    std::string cur_path;
     Titlebar& title_bar = this->make_child<Titlebar>("Xml Parser");
     Textbox& textbox = this->make_child<Textbox>();
     Textbox& editor_output = this->make_child<
@@ -473,6 +472,7 @@ public:
         __load_file(filename);
 
         // textbox.set_contents(__load_file(filename));
+        cur_path = filename;
         size_t pos = filename.find_last_of("/");
         std::string name;
 
@@ -486,7 +486,15 @@ public:
 
         is_open_file = true;
     }
-
+    void save_file(const std::string& path) {
+        std::ofstream ofs(path, std::ios_base::out | std::ios_base::trunc);
+        if (ofs.is_open()) {
+            editor_output.set_contents("Saving...");
+            ofs << this->textbox.contents().str();
+        } else {
+            editor_output.set_contents("Failed to save!!");
+        }
+    }
     void close_file() {
         if (!is_open_file) return;
         is_open_file = false;
@@ -518,6 +526,18 @@ public:
             Shortcuts::remove_shortcut(Key::Code::Enter);
         };
 
+        static auto _on_enter_save = [&, this]() {
+            Glyph_string gs;
+            gs = this->editor_output.contents();
+            if (gs.size()) {
+                this->save_file(gs.str());
+            }
+            editor_output.set_contents(glyph);
+            Focus::set_focus_to(textbox);
+            editor_output.disable_input();
+            Shortcuts::remove_shortcut(Key::Code::Enter);
+        };
+
         // 打开文件 Ctrl + O
         Shortcuts::add_shortcut(Key::Code::Ctrl_o).connect([&, this]() {
             this->editor_output.set_contents("");
@@ -531,8 +551,19 @@ public:
             if (is_open_file) {
                 // 检查是否没有保存
                 this->close_file();
+                cur_path = "";
             }
             Focus::set_focus_to(this->textbox);
+        });
+        // 保存文件 Ctrl + x
+        Shortcuts::add_shortcut(Key::Code::Ctrl_x).connect([&, this]() {
+            this->editor_output.set_contents("");
+            if (this->is_open_file) {
+                this->editor_output.set_contents(cur_path);
+            }
+            this->editor_output.enable_input();
+            Focus::set_focus_to(this->editor_output);
+            Shortcuts::add_shortcut(Key::Code::Enter).connect(_on_enter_save);
         });
 
         glyph = Glyph_string("Ready. Press ", Attribute::Bold) +
@@ -575,10 +606,14 @@ public:
             //锁上去
             lock.lock();
 
+            size_t y = textbox.cursor.y();
+            size_t old = textbox.index_at(textbox.cursor.position());
             textbox.contents_modified.disable();
             Glyph_string res = __parse_line(text);
             textbox.erase(0);
             textbox.insert(res, 0);
+            textbox.scroll_down(y);
+            textbox.set_cursor(old);
             textbox.contents_modified.enable();
 
             lock.unlock();
