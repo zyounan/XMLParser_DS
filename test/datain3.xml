@@ -1,24 +1,22 @@
 <ToDo>
-    <![CDATA[
-
-    ]]>
-    
-    <Item priority="2" 
-    
-    distance=
-    
-    "233"
-    >Go to the
-        <bold>Toy store!
+    <Item distance="233" priority="2">
+        Go to the
+        <bold>
+            Toy store!
         </bold>
     </Item>
-    <Item priority="1" distance="far">Talk to:
+    <syntax highlight="is really cool">
+     <!-- comment test -->
+    </syntax>
+    <Item distance="far" priority="1">
+        Talk to:
         <Meeting where="School">
-            <Attendee name="Marple" position="teacher" />
-            <Attendee name="Voel" position="counselor" />
+            <Attendee position="teacher" name="Marple"/>
+            <Attendee position="counselor" name="Voel"/>
         </Meeting>
-        <Meeting where="Lunch" />
+        <Meeting where="Lunch"/>
     </Item>
-    <Item priority="2" distance="here">Do bills
+    <Item distance="here" priority="2">
+        Do bills
     </Item>
 </ToDo>
