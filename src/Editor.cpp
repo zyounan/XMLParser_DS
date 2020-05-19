@@ -571,6 +571,13 @@ public:
                              detail::ForegroundColor::Red) +
                 Glyph_string(" for help.", Attribute::Bold);
 
+        textbox.cursor.moved.connect([&](cppurses::Point point) {
+            size_t y = textbox.line_count(), x = textbox.cursor.x();
+
+            this->editor_output.set_contents("Line : " +
+                                             std::to_string(y) + " Column : " + std::to_string(x));
+        });
+
         // Syntax Highlighting A
         textbox.contents_modified.connect([&, this](const Glyph_string& text) {
             if (!text.size())
@@ -606,7 +613,7 @@ public:
             //锁上去
             lock.lock();
 
-            size_t y = textbox.cursor.y();
+            size_t y = textbox.top_line();
             size_t old = textbox.index_at(textbox.cursor.position());
             textbox.contents_modified.disable();
             Glyph_string res = __parse_line(text);
