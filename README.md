@@ -1,5 +1,5 @@
 ## Toy Xml Editor
-### 简易CLI Xml 编辑器（数据结构大作业）
+### 简易CLI Xml 编辑器
 
 #### 支持
 - 解析部分 Xml ，建树
